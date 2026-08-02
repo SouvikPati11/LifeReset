@@ -1,0 +1,39 @@
+{
+  "@@locale": "en",
+  "appName": "LifeReset",
+  "@appName": {
+    "description": "The application name"
+  },
+  "appTagline": "Rebuild yourself, one day at a time.",
+  "@appTagline": {
+    "description": "Short tagline shown on the splash screen"
+  },
+  "loading": "Loading…",
+  "@loading": {
+    "description": "Generic loading label"
+  },
+  "retry": "Retry",
+  "@retry": {
+    "description": "Retry action label"
+  },
+  "genericErrorTitle": "Something went wrong",
+  "@genericErrorTitle": {
+    "description": "Default error title"
+  },
+  "genericErrorMessage": "An unexpected error occurred. Please try again.",
+  "@genericErrorMessage": {
+    "description": "Default error message"
+  },
+  "emptyStateTitle": "Nothing here yet",
+  "@emptyStateTitle": {
+    "description": "Default empty state title"
+  },
+  "emptyStateMessage": "Once there is something to show, it will appear here.",
+  "@emptyStateMessage": {
+    "description": "Default empty state message"
+  },
+  "successTitle": "All done",
+  "@successTitle": {
+    "description": "Default success state title"
+  }
+}

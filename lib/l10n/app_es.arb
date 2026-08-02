@@ -1,0 +1,12 @@
+{
+  "@@locale": "es",
+  "appName": "LifeReset",
+  "appTagline": "Reconstrúyete, un día a la vez.",
+  "loading": "Cargando…",
+  "retry": "Reintentar",
+  "genericErrorTitle": "Algo salió mal",
+  "genericErrorMessage": "Ocurrió un error inesperado. Inténtalo de nuevo.",
+  "emptyStateTitle": "Aún no hay nada aquí",
+  "emptyStateMessage": "Cuando haya algo que mostrar, aparecerá aquí.",
+  "successTitle": "Listo"
+}

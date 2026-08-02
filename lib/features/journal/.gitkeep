@@ -1,0 +1,8 @@
+# journal feature module (placeholder)
+#
+# Clean-architecture layers for this module will live under:
+#   data/         — data sources, DTO models, repository implementations
+#   domain/       — entities, repository contracts, use cases
+#   presentation/ — screens, widgets, Riverpod controllers
+#
+# Not implemented in the foundation build.
