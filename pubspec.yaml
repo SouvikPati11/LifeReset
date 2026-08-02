@@ -28,6 +28,9 @@ dependencies:
   firebase_messaging: ^15.1.5
   cloud_functions: ^5.1.5
 
+  # Google Sign-In (Firebase Google auth provider)
+  google_sign_in: ^6.2.1
+
   # AI
   google_generative_ai: ^0.4.6
 

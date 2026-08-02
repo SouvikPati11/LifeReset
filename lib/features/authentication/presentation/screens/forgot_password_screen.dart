@@ -9,6 +9,7 @@ import '../../../../shared/widgets/responsive_layout.dart';
 import '../../../../shared/widgets/success_view.dart';
 import '../controllers/auth_controller.dart';
 import '../utils/auth_validators.dart';
+import '../widgets/auth_error_dialog.dart';
 import '../widgets/auth_text_field.dart';
 
 /// Password-reset request screen.
@@ -49,13 +50,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     ref.listen<AsyncValue<void>>(authControllerProvider, (_, next) {
-      if (next is AsyncError && mounted) {
-        final failure = next.error;
-        final message =
-            failure is Failure ? failure.message : 'Something went wrong.';
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(message)));
+      if (next is AsyncError && next.error is Failure && mounted) {
+        showAuthErrorDialog(context, next.error as Failure);
       }
     });
 

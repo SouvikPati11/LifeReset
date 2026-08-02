@@ -5,15 +5,16 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/errors/failures.dart';
-import '../../../../routing/app_routes.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/responsive_layout.dart';
 import '../controllers/auth_controller.dart';
 import '../utils/auth_validators.dart';
+import '../widgets/auth_error_dialog.dart';
 import '../widgets/auth_text_field.dart';
 import 'auth_routes.dart';
 
-/// Email / password sign-in screen.
+/// Email / password sign-in screen — also the entry point for Google sign-in
+/// and, transparently, admin sign-in (role is resolved after authentication).
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -36,13 +37,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     FocusScope.of(context).unfocus();
-    final success = await ref.read(authControllerProvider.notifier).signIn(
+    // Navigation is handled by the router's auth guard on success.
+    await ref.read(authControllerProvider.notifier).signIn(
           email: _emailController.text,
           password: _passwordController.text,
         );
-    if (success && mounted) {
-      context.go(AppRoutes.home);
-    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    FocusScope.of(context).unfocus();
+    await ref.read(authControllerProvider.notifier).signInWithGoogle();
   }
 
   @override
@@ -52,14 +56,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     ref.listen<AsyncValue<void>>(authControllerProvider, (_, next) {
-      if (next is AsyncError && mounted) {
-        final failure = next.error;
-        final message = failure is Failure
-            ? failure.message
-            : 'Something went wrong.';
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(message)));
+      if (next is AsyncError && next.error is Failure && mounted) {
+        showAuthErrorDialog(context, next.error as Failure);
       }
     });
 
@@ -123,6 +121,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     onPressed: _submit,
                   ),
                   const SizedBox(height: AppSizes.lg),
+                  const _OrDivider(label: 'or'),
+                  const SizedBox(height: AppSizes.lg),
+                  OutlinedButton.icon(
+                    onPressed: isLoading ? null : _signInWithGoogle,
+                    icon: const Icon(Icons.g_mobiledata_rounded, size: 28),
+                    label: const Text('Continue with Google'),
+                  ),
+                  const SizedBox(height: AppSizes.lg),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -144,6 +150,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// A labelled horizontal divider ("─── or ───").
+class _OrDivider extends StatelessWidget {
+  const _OrDivider({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.outlineVariant;
+    return Row(
+      children: [
+        Expanded(child: Divider(color: color)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSizes.md),
+          child: Text(label, style: Theme.of(context).textTheme.bodySmall),
+        ),
+        Expanded(child: Divider(color: color)),
+      ],
     );
   }
 }

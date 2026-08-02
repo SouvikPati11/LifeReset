@@ -4,11 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/errors/failures.dart';
-import '../../../../routing/app_routes.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/responsive_layout.dart';
 import '../controllers/auth_controller.dart';
 import '../utils/auth_validators.dart';
+import '../widgets/auth_error_dialog.dart';
 import '../widgets/auth_text_field.dart';
 
 /// Email / password account creation screen.
@@ -38,14 +38,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     FocusScope.of(context).unfocus();
-    final success = await ref.read(authControllerProvider.notifier).signUp(
+    // On success the router's auth guard routes the (unverified) user to the
+    // verify-email screen — no manual navigation needed here.
+    await ref.read(authControllerProvider.notifier).signUp(
           email: _emailController.text,
           password: _passwordController.text,
           displayName: _nameController.text,
         );
-    if (success && mounted) {
-      context.go(AppRoutes.home);
-    }
   }
 
   @override
@@ -55,13 +54,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     ref.listen<AsyncValue<void>>(authControllerProvider, (_, next) {
-      if (next is AsyncError && mounted) {
-        final failure = next.error;
-        final message =
-            failure is Failure ? failure.message : 'Something went wrong.';
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(message)));
+      if (next is AsyncError && next.error is Failure && mounted) {
+        showAuthErrorDialog(context, next.error as Failure);
       }
     });
 

@@ -20,6 +20,10 @@ abstract interface class AuthRepository {
     required String password,
   });
 
+  /// Signs in with Google. Fails with an [AuthFailure] whose `code` is
+  /// `google-cancelled` when the user dismisses the Google chooser.
+  Future<Result<AuthUser>> signInWithGoogle();
+
   Future<Result<AuthUser>> signUpWithEmail({
     required String email,
     required String password,
@@ -29,6 +33,10 @@ abstract interface class AuthRepository {
   Future<Result<void>> sendPasswordResetEmail(String email);
 
   Future<Result<void>> sendEmailVerification();
+
+  /// Reloads the current user and returns the refreshed [AuthUser] (or `null`
+  /// when signed out), so callers can observe a freshly verified email.
+  Future<Result<AuthUser?>> reloadUser();
 
   Future<Result<void>> signOut();
 }

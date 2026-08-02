@@ -31,6 +31,11 @@ class AuthRepositoryImpl extends BaseRepository implements AuthRepository {
   }
 
   @override
+  Future<Result<AuthUser>> signInWithGoogle() {
+    return guard<AuthUser>(() => _remote.signInWithGoogle());
+  }
+
+  @override
   Future<Result<AuthUser>> signUpWithEmail({
     required String email,
     required String password,
@@ -53,6 +58,11 @@ class AuthRepositoryImpl extends BaseRepository implements AuthRepository {
   @override
   Future<Result<void>> sendEmailVerification() {
     return guard<void>(() => _remote.sendEmailVerification());
+  }
+
+  @override
+  Future<Result<AuthUser?>> reloadUser() {
+    return guard<AuthUser?>(() => _remote.reloadUser());
   }
 
   @override

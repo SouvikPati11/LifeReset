@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../../core/errors/exceptions.dart';
 import '../models/auth_user_model.dart';
@@ -14,6 +15,8 @@ abstract interface class AuthRemoteDataSource {
     required String password,
   });
 
+  Future<AuthUserModel> signInWithGoogle();
+
   Future<AuthUserModel> signUpWithEmail({
     required String email,
     required String password,
@@ -24,6 +27,8 @@ abstract interface class AuthRemoteDataSource {
 
   Future<void> sendEmailVerification();
 
+  Future<AuthUserModel?> reloadUser();
+
   Future<void> signOut();
 }
 
@@ -33,9 +38,10 @@ abstract interface class AuthRemoteDataSource {
 /// human-readable message, so the repository can map them to [Failure]s via
 /// `BaseRepository.guard`.
 class FirebaseAuthRemoteDataSource implements AuthRemoteDataSource {
-  FirebaseAuthRemoteDataSource(this._firebaseAuth);
+  FirebaseAuthRemoteDataSource(this._firebaseAuth, this._googleSignIn);
 
   final FirebaseAuth _firebaseAuth;
+  final GoogleSignIn _googleSignIn;
 
   @override
   Stream<AuthUserModel?> authStateChanges() {
@@ -61,6 +67,30 @@ class FirebaseAuthRemoteDataSource implements AuthRemoteDataSource {
         password: password,
       );
       return _requireUser(credential.user);
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(_messageForCode(e.code), code: e.code);
+    }
+  }
+
+  @override
+  Future<AuthUserModel> signInWithGoogle() async {
+    try {
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        // User dismissed the Google account chooser — not a real error.
+        throw const AuthException(
+          'Google sign-in was cancelled.',
+          code: 'google-cancelled',
+        );
+      }
+      final googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+      final userCredential =
+          await _firebaseAuth.signInWithCredential(credential);
+      return _requireUser(userCredential.user);
     } on FirebaseAuthException catch (e) {
       throw AuthException(_messageForCode(e.code), code: e.code);
     }
@@ -108,8 +138,27 @@ class FirebaseAuthRemoteDataSource implements AuthRemoteDataSource {
   }
 
   @override
+  Future<AuthUserModel?> reloadUser() async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user == null) return null;
+      await user.reload();
+      final refreshed = _firebaseAuth.currentUser;
+      return refreshed == null
+          ? null
+          : AuthUserModel.fromFirebaseUser(refreshed);
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(_messageForCode(e.code), code: e.code);
+    }
+  }
+
+  @override
   Future<void> signOut() async {
     try {
+      // Sign out of Google too so the next Google login re-prompts for account.
+      if (await _googleSignIn.isSignedIn()) {
+        await _googleSignIn.signOut();
+      }
       await _firebaseAuth.signOut();
     } on FirebaseAuthException catch (e) {
       throw AuthException(_messageForCode(e.code), code: e.code);

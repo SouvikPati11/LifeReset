@@ -4,6 +4,7 @@ import '../../../../routing/app_routes.dart';
 import 'forgot_password_screen.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
+import 'verify_email_screen.dart';
 
 /// Route paths and names owned by the authentication feature.
 ///
@@ -21,6 +22,9 @@ class AuthRoutePaths {
 
   static const String forgotPassword = '/auth/forgot-password';
   static const String forgotPasswordName = 'forgot-password';
+
+  static const String verifyEmail = '/auth/verify-email';
+  static const String verifyEmailName = 'verify-email';
 }
 
 /// The authentication routes, exposed as a list so the app router can spread
@@ -47,5 +51,10 @@ final List<RouteBase> authRoutes = [
     path: AuthRoutePaths.forgotPassword,
     name: AuthRoutePaths.forgotPasswordName,
     builder: (context, state) => const ForgotPasswordScreen(),
+  ),
+  GoRoute(
+    path: AuthRoutePaths.verifyEmail,
+    name: AuthRoutePaths.verifyEmailName,
+    builder: (context, state) => const VerifyEmailScreen(),
   ),
 ];

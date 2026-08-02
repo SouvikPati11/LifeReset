@@ -1,0 +1,61 @@
+rules_version = '2';
+
+// LifeReset — Firestore Security Rules
+//
+// Security model for authentication:
+//  - The client NEVER decides its own role. `role` is always written as
+//    "user" on create, and clients can never change `role` or `subscription`
+//    on update — only the backend (Admin SDK, which bypasses rules) or an
+//    existing admin may do so. This is what makes the app's role check
+//    trustworthy: the value read from `users/{uid}.role` cannot be
+//    self-elevated.
+//  - Profiles are private to their owner (and admins).
+//
+// Deploy with: `firebase deploy --only firestore:rules`.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Reads the caller's own role from their existing user document.
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    match /users/{uid} {
+      // Owners can read their own profile; admins can read any profile.
+      allow read: if isOwner(uid) || isAdmin();
+
+      // On create the client may only ever be a free "user", and the document
+      // id must match the authenticated uid.
+      allow create: if isOwner(uid)
+        && request.resource.data.uid == uid
+        && request.resource.data.role == 'user'
+        && request.resource.data.subscription == 'free';
+
+      // On update the owner may edit their profile but must NOT change their
+      // own role or subscription; admins may update freely.
+      allow update: if isAdmin()
+        || (isOwner(uid)
+            && request.resource.data.role == resource.data.role
+            && request.resource.data.subscription == resource.data.subscription);
+
+      // Deletion is an admin-only / backend operation.
+      allow delete: if isAdmin();
+    }
+
+    // Everything else is denied by default until its own rules are written.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

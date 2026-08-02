@@ -2,24 +2,51 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/admin/presentation/admin_dashboard_screen.dart';
+import '../features/authentication/presentation/providers/auth_providers.dart';
+import '../features/authentication/presentation/providers/user_providers.dart';
+import '../features/authentication/presentation/routing/auth_guard.dart';
+import '../features/authentication/presentation/screens/auth_routes.dart';
+import '../features/home/presentation/home_screen.dart';
 import '../features/onboarding/presentation/splash_screen.dart';
 import 'app_routes.dart';
 
 /// Provides the application's [GoRouter].
 ///
-/// In this foundation build only the splash route is registered. Feature
-/// modules will add their own routes here (or via typed route extensions) as
-/// they are implemented, and authentication/onboarding redirects will be wired
-/// through GoRouter's `redirect` callback once those flows exist.
+/// The [AuthGuard] enforces the full authentication flow via `redirect`
+/// (auto-login, email verification, role-based routing), and the router is
+/// refreshed whenever the auth state or the user's Firestore profile changes.
 final routerProvider = Provider<GoRouter>((ref) {
+  final guard = AuthGuard(ref);
+
+  // Re-run the redirect whenever auth state or the user's profile changes.
+  final refresh = ValueNotifier<int>(0);
+  ref
+    ..listen(authStateChangesProvider, (_, __) => refresh.value++)
+    ..listen(userProfileProvider, (_, __) => refresh.value++)
+    ..onDispose(refresh.dispose);
+
   return GoRouter(
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
+    refreshListenable: refresh,
+    redirect: guard.redirect,
     routes: [
       GoRoute(
         path: AppRoutes.splash,
         name: AppRoutes.splashName,
         builder: (context, state) => const SplashScreen(),
+      ),
+      ...authRoutes,
+      GoRoute(
+        path: AppRoutes.home,
+        name: AppRoutes.homeName,
+        builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.admin,
+        name: AppRoutes.adminName,
+        builder: (context, state) => const AdminDashboardScreen(),
       ),
     ],
     errorBuilder: (context, state) => _RouteErrorScreen(error: state.error),
