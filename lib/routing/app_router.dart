@@ -5,25 +5,30 @@ import 'package:go_router/go_router.dart';
 import '../features/admin/presentation/admin_dashboard_screen.dart';
 import '../features/authentication/presentation/providers/auth_providers.dart';
 import '../features/authentication/presentation/providers/user_providers.dart';
-import '../features/authentication/presentation/routing/auth_guard.dart';
 import '../features/authentication/presentation/screens/auth_routes.dart';
 import '../features/home/presentation/home_screen.dart';
+import '../features/onboarding/presentation/providers/onboarding_providers.dart';
+import '../features/onboarding/presentation/routing/onboarding_routes.dart';
 import '../features/onboarding/presentation/splash_screen.dart';
 import 'app_routes.dart';
 
 /// Provides the application's [GoRouter].
 ///
-/// The [AuthGuard] enforces the full authentication flow via `redirect`
-/// (auto-login, email verification, role-based routing), and the router is
-/// refreshed whenever the auth state or the user's Firestore profile changes.
+/// [OnboardingAwareRedirect] composes the authentication guard with the
+/// onboarding gate via `redirect` (auto-login, email verification, role-based
+/// routing, and show-onboarding-once), and the router is refreshed whenever the
+/// auth state, the user's Firestore profile, or the onboarding status changes.
 final routerProvider = Provider<GoRouter>((ref) {
-  final guard = AuthGuard(ref);
+  // Auth guard + onboarding gate, composed so onboarding shows exactly once.
+  final guard = OnboardingAwareRedirect(ref);
 
-  // Re-run the redirect whenever auth state or the user's profile changes.
+  // Re-run the redirect whenever auth state, profile, or onboarding status
+  // changes.
   final refresh = ValueNotifier<int>(0);
   ref
     ..listen(authStateChangesProvider, (_, __) => refresh.value++)
     ..listen(userProfileProvider, (_, __) => refresh.value++)
+    ..listen(onboardingStatusProvider, (_, __) => refresh.value++)
     ..onDispose(refresh.dispose);
 
   return GoRouter(
@@ -38,6 +43,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SplashScreen(),
       ),
       ...authRoutes,
+      ...onboardingRoutes,
       GoRoute(
         path: AppRoutes.home,
         name: AppRoutes.homeName,
