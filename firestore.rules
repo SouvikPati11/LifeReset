@@ -76,24 +76,63 @@ service cloud.firestore {
 
     // Shared recovery content — readable by any signed-in user, written only
     // by the backend/console (never by clients).
+    // Shared recovery content — readable by any signed-in user; writable only
+    // by admins (managed through the in-app Admin Panel).
     match /programs/{programId} {
       allow read: if isSignedIn();
-      allow write: if false;
+      allow write: if isAdmin();
     }
 
     match /daily_tasks/{taskId} {
       allow read: if isSignedIn();
-      allow write: if false;
+      allow write: if isAdmin();
+    }
+
+    // Program day-tasks managed by the Admin Panel.
+    match /program_tasks/{taskId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
 
     match /quotes/{quoteId} {
       allow read: if isSignedIn();
-      allow write: if false;
+      allow write: if isAdmin();
     }
 
     match /journal_prompts/{promptId} {
       allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Admin-authored notifications (sending logic is out of scope).
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Payment transactions — read-only in-app (written by the payment backend
+    // later); visible only to admins.
+    match /transactions/{txnId} {
+      allow read: if isAdmin();
       allow write: if false;
+    }
+
+    // App-wide configuration / settings. Readable by any signed-in user (for
+    // maintenance mode / version), writable only by admins.
+    match /app_config/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Admin analytics: collection-group reads across all users' private data.
+    match /{path=**}/journal_entries/{entryId} {
+      allow read: if isAdmin();
+    }
+    match /{path=**}/mood_history/{moodId} {
+      allow read: if isAdmin();
+    }
+    match /{path=**}/ai_conversations/{document=**} {
+      allow read: if isAdmin();
     }
 
     // Everything else is denied by default until its own rules are written.
