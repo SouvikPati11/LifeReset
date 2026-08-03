@@ -53,6 +53,19 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // AI Coach conversations and their messages — private to the owner.
+    match /users/{uid}/ai_conversations/{document=**} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // Server-managed private data (e.g. AI message usage counter). Readable by
+    // the owner for display; only the backend (Admin SDK) may write it, so the
+    // daily message limit cannot be tampered with from the client.
+    match /users/{uid}/private/{document=**} {
+      allow read: if isOwner(uid);
+      allow write: if false;
+    }
+
     // Shared recovery content — readable by any signed-in user, written only
     // by the backend/console (never by clients).
     match /programs/{programId} {
