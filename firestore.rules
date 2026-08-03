@@ -53,6 +53,23 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Shared recovery content — readable by any signed-in user, written only
+    // by the backend/console (never by clients).
+    match /programs/{programId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /daily_tasks/{taskId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /quotes/{quoteId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
     // Everything else is denied by default until its own rules are written.
     match /{document=**} {
       allow read, write: if false;

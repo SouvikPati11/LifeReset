@@ -1,118 +1,69 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/constants/app_sizes.dart';
-import '../../../shared/widgets/loading_view.dart';
-import '../../../shared/widgets/responsive_layout.dart';
-import '../../authentication/presentation/controllers/auth_controller.dart';
-import '../../authentication/presentation/providers/user_providers.dart';
+import 'views/home_dashboard_view.dart';
+import 'widgets/coming_soon_view.dart';
 
-/// User app entry point (post-authentication landing).
+/// The user app shell: a Material 3 bottom-navigation host.
 ///
-/// This is the minimal, real home surface the auth flow hands verified users
-/// to — it shows the signed-in account from Firestore and offers sign-out. The
-/// full Breakup Recovery experience will be built out in the `home` module.
-class HomeScreen extends ConsumerWidget {
+/// Only the Home tab is fully implemented (the recovery dashboard); the other
+/// tabs are placeholders until their modules are built. Tabs are kept in an
+/// [IndexedStack] so each tab preserves its state and scroll position.
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final profileAsync = ref.watch(userProfileProvider);
-    final textTheme = Theme.of(context).textTheme;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('LifeReset'),
-        actions: [
-          IconButton(
-            tooltip: 'Sign out',
-            icon: const Icon(Icons.logout_rounded),
-            onPressed: () =>
-                ref.read(authControllerProvider.notifier).signOut(),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: ContentContainer(
-          padding: const EdgeInsets.all(AppSizes.lg),
-          child: profileAsync.when(
-            loading: () => const LoadingView(),
-            error: (_, __) => Center(
-              child: Text(
-                'Could not load your profile.',
-                style: textTheme.bodyMedium,
-              ),
-            ),
-            data: (profile) {
-              final name = (profile?.name.isNotEmpty ?? false)
-                  ? profile!.name
-                  : 'there';
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: AppSizes.md),
-                  Text('Hi $name 👋', style: textTheme.headlineMedium),
-                  const SizedBox(height: AppSizes.xs),
-                  Text(
-                    'Welcome to your recovery space.',
-                    style: textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: AppSizes.xl),
-                  if (profile != null)
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppSizes.md),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _InfoRow(label: 'Email', value: profile.email),
-                            _InfoRow(
-                              label: 'Plan',
-                              value: profile.subscription.value,
-                            ),
-                            _InfoRow(label: 'Role', value: profile.role.value),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value});
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  int _index = 0;
 
-  final String label;
-  final String value;
+  static const List<NavigationDestination> _destinations = [
+    NavigationDestination(
+      icon: Icon(Icons.home_outlined),
+      selectedIcon: Icon(Icons.home_rounded),
+      label: 'Home',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.event_note_outlined),
+      selectedIcon: Icon(Icons.event_note_rounded),
+      label: 'Plan',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.eco_outlined),
+      selectedIcon: Icon(Icons.eco_rounded),
+      label: 'Journey',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.forum_outlined),
+      selectedIcon: Icon(Icons.forum_rounded),
+      label: 'Coach',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.person_outline_rounded),
+      selectedIcon: Icon(Icons.person_rounded),
+      label: 'Profile',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 72,
-            child: Text(
-              label,
-              style: textTheme.labelMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(value, style: textTheme.bodyMedium),
-          ),
+    return Scaffold(
+      body: IndexedStack(
+        index: _index,
+        children: const [
+          HomeDashboardView(),
+          ComingSoonView(title: 'Plan', icon: Icons.event_note_rounded),
+          ComingSoonView(title: 'Journey', icon: Icons.eco_rounded),
+          ComingSoonView(title: 'Coach', icon: Icons.forum_rounded),
+          ComingSoonView(title: 'Profile', icon: Icons.person_rounded),
         ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (value) => setState(() => _index = value),
+        destinations: _destinations,
       ),
     );
   }
