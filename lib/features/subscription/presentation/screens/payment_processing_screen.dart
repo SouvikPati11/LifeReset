@@ -68,12 +68,12 @@ class _PaymentProcessingScreenState
     }
   }
 
-  StepState _stateFor(int index, CheckoutPhase phase) {
-    if (phase == CheckoutPhase.success) return StepState.done;
+  ProcessingStepState _stateFor(int index, CheckoutPhase phase) {
+    if (phase == CheckoutPhase.success) return ProcessingStepState.done;
     final active = _activeStep(phase);
-    if (index < active) return StepState.done;
-    if (index == active) return StepState.active;
-    return StepState.pending;
+    if (index < active) return ProcessingStepState.done;
+    if (index == active) return ProcessingStepState.active;
+    return ProcessingStepState.pending;
   }
 
   @override

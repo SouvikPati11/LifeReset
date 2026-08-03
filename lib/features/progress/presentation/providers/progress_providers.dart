@@ -43,6 +43,6 @@ final journalCountProvider = FutureProvider<int>((ref) async {
 final averageMoodProvider = Provider<double>((ref) {
   final moods = ref.watch(moodHistoryProvider).valueOrNull ?? const [];
   if (moods.isEmpty) return 0;
-  final total = moods.fold<int>(0, (sum, m) => sum + m.score);
+  final total = moods.fold<int>(0, (acc, m) => acc + m.score);
   return total / moods.length;
 });

@@ -52,7 +52,7 @@ class JournalEditorController extends AutoDisposeAsyncNotifier<void> {
     );
   }
 
-  Future<bool> update({
+  Future<bool> updateEntry({
     required String entryId,
     required String title,
     required String content,

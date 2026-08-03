@@ -14,7 +14,7 @@ sealed class Result<T> {
   bool get isFailure => this is FailureResult<T>;
 
   /// Folds both branches into a single value of type [R].
-  R when({
+  R when<R>({
     required R Function(T value) success,
     required R Function(Failure failure) failure,
   }) {

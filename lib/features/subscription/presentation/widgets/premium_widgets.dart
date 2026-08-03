@@ -133,13 +133,13 @@ class BenefitChip extends StatelessWidget {
 }
 
 /// State of a single step in the payment-processing checklist.
-enum StepState { done, active, pending }
+enum ProcessingStepState { done, active, pending }
 
 /// A row in the "Processing Payment" checklist.
 class ProcessingStep extends StatelessWidget {
   const ProcessingStep({super.key, required this.label, required this.state});
   final String label;
-  final StepState state;
+  final ProcessingStepState state;
 
   @override
   Widget build(BuildContext context) {
@@ -149,11 +149,11 @@ class ProcessingStep extends StatelessWidget {
     Widget leading;
     Color labelColor;
     switch (state) {
-      case StepState.done:
+      case ProcessingStepState.done:
         leading = const Icon(Icons.check_circle_rounded,
             size: 22, color: kSuccessGreen);
         labelColor = colorScheme.onSurface;
-      case StepState.active:
+      case ProcessingStepState.active:
         leading = SizedBox(
           width: 22,
           height: 22,
@@ -161,7 +161,7 @@ class ProcessingStep extends StatelessWidget {
               strokeWidth: 2.5, color: colorScheme.primary),
         );
         labelColor = colorScheme.onSurface;
-      case StepState.pending:
+      case ProcessingStepState.pending:
         leading = Icon(Icons.radio_button_unchecked_rounded,
             size: 22, color: colorScheme.outline);
         labelColor = colorScheme.onSurfaceVariant;

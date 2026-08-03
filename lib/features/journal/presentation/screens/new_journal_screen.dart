@@ -71,7 +71,7 @@ class _NewJournalScreenState extends ConsumerState<NewJournalScreen> {
     final tags = _tags.toList();
 
     if (widget.isEditing) {
-      final ok = await controller.update(
+      final ok = await controller.updateEntry(
         entryId: widget.entry!.id,
         title: parts.title,
         content: parts.content,
