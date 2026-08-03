@@ -6,6 +6,8 @@ import '../../../authentication/presentation/providers/user_providers.dart';
 import '../../../coach/presentation/screens/coach_home_screen.dart';
 import '../../../journal/presentation/screens/journal_home_screen.dart';
 import '../../../journal/presentation/screens/mood_check_screen.dart';
+import '../../../notifications/presentation/screens/notifications_inbox_screen.dart';
+import '../../../progress/presentation/screens/progress_screen.dart';
 import '../screens/todays_plan_screen.dart';
 import '../widgets/coming_soon_view.dart';
 import '../widgets/daily_inspiration_card.dart';
@@ -33,12 +35,18 @@ class HomeDashboardView extends ConsumerWidget {
     );
   }
 
-  /// Routes a Quick Action to its module screen; falls back to a placeholder
-  /// for actions whose module is not yet built (e.g. Progress).
+  void _openInbox(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const NotificationsInboxScreen()),
+    );
+  }
+
+  /// Routes a Quick Action to its module screen.
   void _openQuickAction(BuildContext context, String title) {
     final Widget? screen = switch (title) {
       'Journal' => const JournalHomeScreen(),
       'Mood' => const MoodCheckScreen(),
+      'Progress' => const ProgressScreen(),
       'AI Coach' => const CoachHomeScreen(),
       _ => null,
     };
@@ -66,7 +74,7 @@ class HomeDashboardView extends ConsumerWidget {
         children: [
           _GreetingHeader(
             name: firstName,
-            onNotifications: () => _openComingSoon(context, 'Notifications'),
+            onNotifications: () => _openInbox(context),
           ),
           const SizedBox(height: AppSizes.lg),
           const RecoveryScoreCard(),

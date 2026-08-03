@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/constants/app_constants.dart';
 import 'core/localization/locale_controller.dart';
+import 'features/notifications/presentation/widgets/notifications_initializer.dart';
 import 'generated/l10n/app_localizations.dart';
 import 'routing/app_router.dart';
 import 'theme/app_theme.dart';
@@ -27,6 +28,12 @@ class LifeResetApp extends ConsumerWidget {
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       routerConfig: router,
+
+      // Wire push notifications once, app-wide: requests permission, registers
+      // the FCM token, and surfaces foreground messages. The inbox itself is
+      // read from Firestore, so this needs no Cloud Functions to run.
+      builder: (context, child) =>
+          NotificationsInitializer(child: child ?? const SizedBox.shrink()),
 
       // Theming (Material 3).
       theme: AppTheme.light,

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/utils/app_logger.dart';
 import '../../../../firebase_options.dart';
+import '../../../../shared/services/firebase_service.dart';
 import '../../../authentication/presentation/providers/auth_providers.dart';
 import '../controllers/notifications_controller.dart';
 import '../screens/notifications_inbox_screen.dart';
@@ -50,7 +51,15 @@ class _NotificationsInitializerState
   @override
   void initState() {
     super.initState();
-    FirebaseMessaging.onBackgroundMessage(notificationsBackgroundHandler);
+    // Firebase may be uninitialized in development (placeholder config); guard
+    // so notification setup never blocks app startup.
+    if (!FirebaseService.isInitialized) return;
+    try {
+      FirebaseMessaging.onBackgroundMessage(notificationsBackgroundHandler);
+    } catch (e) {
+      AppLogger.warning('Could not register FCM background handler: $e');
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (ref.read(currentUserProvider) != null) {
         ref.read(notificationsControllerProvider.notifier).initialize();
