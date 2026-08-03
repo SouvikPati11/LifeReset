@@ -58,6 +58,14 @@ service cloud.firestore {
       allow read, write: if isOwner(uid);
     }
 
+    // Journal entries and mood history — private to the owner.
+    match /users/{uid}/journal_entries/{entryId} {
+      allow read, write: if isOwner(uid);
+    }
+    match /users/{uid}/mood_history/{moodId} {
+      allow read, write: if isOwner(uid);
+    }
+
     // Server-managed private data (e.g. AI message usage counter). Readable by
     // the owner for display; only the backend (Admin SDK) may write it, so the
     // daily message limit cannot be tampered with from the client.
@@ -79,6 +87,11 @@ service cloud.firestore {
     }
 
     match /quotes/{quoteId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /journal_prompts/{promptId} {
       allow read: if isSignedIn();
       allow write: if false;
     }
