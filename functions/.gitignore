@@ -2,3 +2,9 @@ node_modules/
 .env
 *.log
 .firebase/
+
+# Service-account keys used by scripts/dev-notify.mjs — never commit these.
+serviceAccount*.json
+*service-account*.json
+*serviceaccount*.json
+.keys/
