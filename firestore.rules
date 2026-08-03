@@ -110,10 +110,27 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Payment transactions — read-only in-app (written by the payment backend
-    // later); visible only to admins.
+    // Payment transactions (billing history). Written only by the payment
+    // backend (Cloud Functions, Admin SDK). Readable by the owning user and by
+    // admins.
     match /transactions/{txnId} {
-      allow read: if isAdmin();
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow write: if false;
+    }
+
+    // Razorpay orders — one doc per created order, the idempotency anchor for
+    // verification. Written only by Cloud Functions; readable by the owner.
+    match /payments/{orderId} {
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow write: if false;
+    }
+
+    // Per-user subscription record. Written only by Cloud Functions (the client
+    // can never grant itself premium); readable by the owner and admins.
+    match /subscriptions/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
       allow write: if false;
     }
 
