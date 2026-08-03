@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../coach/presentation/screens/coach_home_screen.dart';
+import '../../journal/presentation/screens/journal_home_screen.dart';
+import '../../profile/presentation/screens/profile_home_screen.dart';
+import 'screens/todays_plan_screen.dart';
 import 'views/home_dashboard_view.dart';
-import 'widgets/coming_soon_view.dart';
 
 /// The user app shell: a Material 3 bottom-navigation host.
 ///
-/// Only the Home tab is fully implemented (the recovery dashboard); the other
-/// tabs are placeholders until their modules are built. Tabs are kept in an
+/// Each tab hosts its module's entry screen. Tabs are kept in an
 /// [IndexedStack] so each tab preserves its state and scroll position.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -54,10 +56,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         index: _index,
         children: const [
           HomeDashboardView(),
-          ComingSoonView(title: 'Plan', icon: Icons.event_note_rounded),
-          ComingSoonView(title: 'Journey', icon: Icons.eco_rounded),
-          ComingSoonView(title: 'Coach', icon: Icons.forum_rounded),
-          ComingSoonView(title: 'Profile', icon: Icons.person_rounded),
+          TodaysPlanScreen(),
+          JournalHomeScreen(),
+          CoachHomeScreen(),
+          ProfileHomeScreen(),
         ],
       ),
       bottomNavigationBar: NavigationBar(

@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
 import '../../../authentication/presentation/providers/user_providers.dart';
+import '../../../coach/presentation/screens/coach_home_screen.dart';
+import '../../../journal/presentation/screens/journal_home_screen.dart';
+import '../../../journal/presentation/screens/mood_check_screen.dart';
 import '../screens/todays_plan_screen.dart';
 import '../widgets/coming_soon_view.dart';
 import '../widgets/daily_inspiration_card.dart';
@@ -28,6 +31,22 @@ class HomeDashboardView extends ConsumerWidget {
         builder: (_) => ComingSoonView(title: title, showAppBar: true),
       ),
     );
+  }
+
+  /// Routes a Quick Action to its module screen; falls back to a placeholder
+  /// for actions whose module is not yet built (e.g. Progress).
+  void _openQuickAction(BuildContext context, String title) {
+    final Widget? screen = switch (title) {
+      'Journal' => const JournalHomeScreen(),
+      'Mood' => const MoodCheckScreen(),
+      'AI Coach' => const CoachHomeScreen(),
+      _ => null,
+    };
+    if (screen == null) {
+      _openComingSoon(context, title);
+      return;
+    }
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
   }
 
   @override
@@ -58,7 +77,7 @@ class HomeDashboardView extends ConsumerWidget {
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: AppSizes.sm),
           QuickActionsGrid(
-            onOpen: (title) => _openComingSoon(context, title),
+            onOpen: (title) => _openQuickAction(context, title),
           ),
           const SizedBox(height: AppSizes.lg),
           Text('Daily Inspiration',
