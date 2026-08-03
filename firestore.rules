@@ -74,6 +74,21 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Push-notification inbox. Created only by Cloud Functions (the sender);
+    // the owner may read and mark items read / delete them.
+    match /users/{uid}/notifications/{notifId} {
+      allow read: if isOwner(uid);
+      allow update, delete: if isOwner(uid);
+      allow create: if false;
+    }
+
+    // FCM device tokens (document id = token). The owner registers, refreshes
+    // and removes their own device tokens; Cloud Functions read them to target
+    // sends. Clients never send messages — only register tokens.
+    match /users/{uid}/fcm_tokens/{token} {
+      allow read, write: if isOwner(uid);
+    }
+
     // Shared recovery content — readable by any signed-in user, written only
     // by the backend/console (never by clients).
     // Shared recovery content — readable by any signed-in user; writable only
