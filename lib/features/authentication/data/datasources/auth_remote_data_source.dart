@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../../core/errors/exceptions.dart';
+import '../../../../core/utils/app_logger.dart';
 import '../models/auth_user_model.dart';
 
 /// Remote authentication data source contract.
@@ -67,8 +68,13 @@ class FirebaseAuthRemoteDataSource implements AuthRemoteDataSource {
         password: password,
       );
       return _requireUser(credential.user);
-    } on FirebaseAuthException catch (e) {
-      throw AuthException(_messageForCode(e.code), code: e.code);
+    } on FirebaseAuthException catch (e, st) {
+      throw _authException('sign-in', e, st);
+    } on AppException {
+      rethrow;
+    } catch (e, st) {
+      AppLogger.error('Unexpected error during sign-in', e, st);
+      throw AuthException('Sign-in failed: $e', code: 'unknown');
     }
   }
 
@@ -91,8 +97,8 @@ class FirebaseAuthRemoteDataSource implements AuthRemoteDataSource {
       final userCredential =
           await _firebaseAuth.signInWithCredential(credential);
       return _requireUser(userCredential.user);
-    } on FirebaseAuthException catch (e) {
-      throw AuthException(_messageForCode(e.code), code: e.code);
+    } on FirebaseAuthException catch (e, st) {
+      throw _authException('auth', e, st);
     }
   }
 
@@ -113,8 +119,15 @@ class FirebaseAuthRemoteDataSource implements AuthRemoteDataSource {
         await user.reload();
       }
       return AuthUserModel.fromFirebaseUser(_firebaseAuth.currentUser ?? user);
-    } on FirebaseAuthException catch (e) {
-      throw AuthException(_messageForCode(e.code), code: e.code);
+    } on FirebaseAuthException catch (e, st) {
+      throw _authException('sign-up', e, st);
+    } on AppException {
+      rethrow;
+    } catch (e, st) {
+      // Non-FirebaseAuth failure (e.g. PlatformException, uninitialized
+      // Firebase). Surface it instead of a silent generic message.
+      AppLogger.error('Unexpected error during sign-up', e, st);
+      throw AuthException('Sign-up failed: $e', code: 'unknown');
     }
   }
 
@@ -122,8 +135,8 @@ class FirebaseAuthRemoteDataSource implements AuthRemoteDataSource {
   Future<void> sendPasswordResetEmail(String email) async {
     try {
       await _firebaseAuth.sendPasswordResetEmail(email: email);
-    } on FirebaseAuthException catch (e) {
-      throw AuthException(_messageForCode(e.code), code: e.code);
+    } on FirebaseAuthException catch (e, st) {
+      throw _authException('auth', e, st);
     }
   }
 
@@ -132,8 +145,8 @@ class FirebaseAuthRemoteDataSource implements AuthRemoteDataSource {
     try {
       final user = _requireRawUser(_firebaseAuth.currentUser);
       await user.sendEmailVerification();
-    } on FirebaseAuthException catch (e) {
-      throw AuthException(_messageForCode(e.code), code: e.code);
+    } on FirebaseAuthException catch (e, st) {
+      throw _authException('auth', e, st);
     }
   }
 
@@ -147,8 +160,8 @@ class FirebaseAuthRemoteDataSource implements AuthRemoteDataSource {
       return refreshed == null
           ? null
           : AuthUserModel.fromFirebaseUser(refreshed);
-    } on FirebaseAuthException catch (e) {
-      throw AuthException(_messageForCode(e.code), code: e.code);
+    } on FirebaseAuthException catch (e, st) {
+      throw _authException('auth', e, st);
     }
   }
 
@@ -160,8 +173,8 @@ class FirebaseAuthRemoteDataSource implements AuthRemoteDataSource {
         await _googleSignIn.signOut();
       }
       await _firebaseAuth.signOut();
-    } on FirebaseAuthException catch (e) {
-      throw AuthException(_messageForCode(e.code), code: e.code);
+    } on FirebaseAuthException catch (e, st) {
+      throw _authException('auth', e, st);
     }
   }
 
@@ -178,8 +191,29 @@ class FirebaseAuthRemoteDataSource implements AuthRemoteDataSource {
     return user;
   }
 
-  /// Maps Firebase auth error codes to user-facing messages.
-  String _messageForCode(String code) {
+  /// Logs the real Firebase exception (code + message) and converts it into an
+  /// [AuthException] whose message never hides the underlying error: known
+  /// codes get a friendly message, anything else surfaces Firebase's own code
+  /// and message so the real cause (e.g. `operation-not-allowed`,
+  /// `network-request-failed`, or a config error like `CONFIGURATION_NOT_FOUND`
+  /// reported as code `unknown`) is visible and diagnosable.
+  AuthException _authException(
+    String context,
+    FirebaseAuthException e,
+    StackTrace st,
+  ) {
+    AppLogger.error(
+      'FirebaseAuthException during $context '
+      '[code=${e.code.isEmpty ? 'unknown' : e.code}]: ${e.message}',
+      e,
+      st,
+    );
+    return AuthException(_messageForCode(e.code, e.message), code: e.code);
+  }
+
+  /// Maps Firebase auth error codes to user-facing messages. Unknown codes fall
+  /// through to Firebase's own message plus the code, so nothing is swallowed.
+  String _messageForCode(String code, [String? message]) {
     switch (code) {
       case 'invalid-email':
         return 'That email address is not valid.';
@@ -194,13 +228,16 @@ class FirebaseAuthRemoteDataSource implements AuthRemoteDataSource {
       case 'weak-password':
         return 'Please choose a stronger password.';
       case 'operation-not-allowed':
-        return 'Email/password sign-in is not enabled.';
+        return 'Email/password sign-in is not enabled for this project.';
       case 'too-many-requests':
         return 'Too many attempts. Please try again later.';
       case 'network-request-failed':
         return 'Network error. Check your connection and try again.';
       default:
-        return 'Authentication failed. Please try again.';
+        final detail =
+            (message == null || message.trim().isEmpty) ? 'Authentication failed.' : message.trim();
+        final shownCode = code.isEmpty ? 'unknown' : code;
+        return '$detail (code: $shownCode)';
     }
   }
 }
