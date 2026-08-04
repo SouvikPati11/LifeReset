@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../../core/errors/exceptions.dart';
@@ -98,7 +99,27 @@ class FirebaseAuthRemoteDataSource implements AuthRemoteDataSource {
           await _firebaseAuth.signInWithCredential(credential);
       return _requireUser(userCredential.user);
     } on FirebaseAuthException catch (e, st) {
-      throw _authException('auth', e, st);
+      throw _authException('google-sign-in', e, st);
+    } on AppException {
+      rethrow; // e.g. the 'google-cancelled' case above.
+    } on PlatformException catch (e, st) {
+      // Native Google Sign-In failure (not a FirebaseAuthException). Code 10
+      // (DEVELOPER_ERROR / ApiException: 10) means the app's SHA-1/SHA-256
+      // fingerprint or OAuth client is not configured in Firebase.
+      AppLogger.error(
+        'Google sign-in PlatformException [code=${e.code}]: ${e.message} '
+        '(details: ${e.details})',
+        e,
+        st,
+      );
+      final message = e.message?.contains('10') ?? false
+          ? "Google sign-in isn't configured for this build. The app's SHA-1 "
+              'fingerprint must be added to Firebase (ApiException: 10).'
+          : 'Google sign-in failed. Please try again.';
+      throw AuthException(message, code: e.code);
+    } catch (e, st) {
+      AppLogger.error('Unexpected error during Google sign-in', e, st);
+      throw AuthException('Google sign-in failed: $e', code: 'unknown');
     }
   }
 

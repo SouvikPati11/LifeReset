@@ -2,6 +2,9 @@ plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    // Google Services — wires google-services.json into the build so Google
+    // Sign-In can resolve the project's OAuth client.
+    id("com.google.gms.google-services")
 }
 
 android {

@@ -53,8 +53,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final state = ref.watch(authControllerProvider);
     final isLoading = state.isLoading;
     final textTheme = Theme.of(context).textTheme;
-    final illoHeight =
-        (MediaQuery.sizeOf(context).height * 0.24).clamp(150.0, 220.0);
+    final media = MediaQuery.of(context);
+    final illoHeight = (media.size.height * 0.28).clamp(190.0, 280.0);
 
     ref.listen<AsyncValue<void>>(authControllerProvider, (_, next) {
       if (next is AsyncError && next.error is Failure && mounted) {
@@ -63,59 +63,85 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     return Scaffold(
-      backgroundColor: AuthStyle.pageBackground(context),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                  AuthStyle.s24, AuthStyle.s16, AuthStyle.s24, AuthStyle.s32),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: AuthStyle.s16),
-                    const SlideFadeIn(
-                      child: Center(child: AuthLogo()),
-                    ),
-                    const SizedBox(height: AuthStyle.s24),
-                    SlideFadeIn(
-                      delay: const Duration(milliseconds: 60),
-                      child: Text('Welcome back!',
-                          textAlign: TextAlign.center,
-                          style: AuthStyle.title(context)),
-                    ),
-                    const SizedBox(height: AuthStyle.s8),
-                    SlideFadeIn(
-                      delay: const Duration(milliseconds: 90),
-                      child: Text(
-                        'Continue your healing journey.',
-                        textAlign: TextAlign.center,
-                        style: AuthStyle.subtitle(context),
-                      ),
-                    ),
-                    const SizedBox(height: AuthStyle.s24),
-                    SlideFadeIn(
-                      delay: const Duration(milliseconds: 120),
-                      child: SunriseIllustration(height: illoHeight),
-                    ),
-                    const SizedBox(height: AuthStyle.s24),
-                    SlideFadeIn(
-                      delay: const Duration(milliseconds: 160),
-                      child: Container(
-                        padding: const EdgeInsets.all(AuthStyle.s24),
-                        decoration: BoxDecoration(
-                          color: AuthStyle.cardSurface(context),
-                          borderRadius:
-                              BorderRadius.circular(AuthStyle.cardRadius),
-                          boxShadow: AuthStyle.softShadow(context),
+      // White scaffold so the sheet blends; the header region paints its own
+      // lavender tint behind the logo / title and the illustration.
+      backgroundColor: AuthStyle.cardSurface(context),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ── Header + full-bleed illustration on the lavender tint ──
+                Container(
+                  color: AuthStyle.pageBackground(context),
+                  child: Column(
+                    children: [
+                      SafeArea(
+                        bottom: false,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                              AuthStyle.s24, AuthStyle.s16, AuthStyle.s24, 0),
+                          child: Column(
+                            children: [
+                              const SlideFadeIn(child: AuthLogo()),
+                              const SizedBox(height: AuthStyle.s16),
+                              SlideFadeIn(
+                                delay: const Duration(milliseconds: 60),
+                                child: Text('Welcome back!',
+                                    textAlign: TextAlign.center,
+                                    style: AuthStyle.title(context)),
+                              ),
+                              const SizedBox(height: AuthStyle.s8),
+                              SlideFadeIn(
+                                delay: const Duration(milliseconds: 90),
+                                child: Text('Continue your healing journey.',
+                                    textAlign: TextAlign.center,
+                                    style: AuthStyle.subtitle(context)),
+                              ),
+                              const SizedBox(height: AuthStyle.s16),
+                            ],
+                          ),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            AuthTextInput(
+                      ),
+                      SlideFadeIn(
+                        delay: const Duration(milliseconds: 120),
+                        child: SunriseIllustration(height: illoHeight),
+                      ),
+                    ],
+                  ),
+                ),
+                // ── Form sheet overlapping the illustration ──
+                Transform.translate(
+                  offset: const Offset(0, -28),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AuthStyle.cardSurface(context),
+                      borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(28)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(
+                              alpha:
+                                  Theme.of(context).brightness == Brightness.dark
+                                      ? 0.4
+                                      : 0.05),
+                          blurRadius: 20,
+                          offset: const Offset(0, -6),
+                        ),
+                      ],
+                    ),
+                    padding: EdgeInsets.fromLTRB(AuthStyle.s24, AuthStyle.s32,
+                        AuthStyle.s24, AuthStyle.s24 + media.padding.bottom),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          SlideFadeIn(
+                            delay: const Duration(milliseconds: 160),
+                            child: AuthTextInput(
                               controller: _emailController,
                               label: 'Email Address',
                               hint: 'Enter your email',
@@ -126,8 +152,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               enabled: !isLoading,
                               autofillHints: const [AutofillHints.email],
                             ),
-                            const SizedBox(height: AuthStyle.s16),
-                            AuthTextInput(
+                          ),
+                          const SizedBox(height: AuthStyle.s16),
+                          SlideFadeIn(
+                            delay: const Duration(milliseconds: 190),
+                            child: AuthTextInput(
                               controller: _passwordController,
                               label: 'Password',
                               hint: 'Enter your password',
@@ -139,60 +168,64 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               autofillHints: const [AutofillHints.password],
                               onFieldSubmitted: (_) => _submit(),
                             ),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: isLoading
-                                    ? null
-                                    : () => context
-                                        .push(AuthRoutePaths.forgotPassword),
-                                style: TextButton.styleFrom(
-                                    foregroundColor: AuthStyle.accent),
-                                child: const Text('Forgot Password?'),
-                              ),
+                          ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: isLoading
+                                  ? null
+                                  : () => context
+                                      .push(AuthRoutePaths.forgotPassword),
+                              style: TextButton.styleFrom(
+                                  foregroundColor: AuthStyle.accent),
+                              child: const Text('Forgot Password?'),
                             ),
-                            const SizedBox(height: AuthStyle.s8),
-                            AuthGradientButton(
+                          ),
+                          const SizedBox(height: AuthStyle.s8),
+                          SlideFadeIn(
+                            delay: const Duration(milliseconds: 220),
+                            child: AuthGradientButton(
                               label: 'Sign In',
                               isLoading: isLoading,
                               onPressed: _submit,
                             ),
-                            const SizedBox(height: AuthStyle.s24),
-                            const AuthOrDivider(label: 'OR CONTINUE WITH'),
-                            const SizedBox(height: AuthStyle.s24),
-                            GoogleSignInButton(
+                          ),
+                          const SizedBox(height: AuthStyle.s24),
+                          const AuthOrDivider(label: 'OR CONTINUE WITH'),
+                          const SizedBox(height: AuthStyle.s24),
+                          SlideFadeIn(
+                            delay: const Duration(milliseconds: 250),
+                            child: GoogleSignInButton(
                               onPressed: isLoading ? null : _signInWithGoogle,
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AuthStyle.s24),
-                    SlideFadeIn(
-                      delay: const Duration(milliseconds: 200),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text("Don't have an account? ",
-                              style: textTheme.bodyMedium),
-                          GestureDetector(
-                            onTap: isLoading
-                                ? null
-                                : () => context.push(AuthRoutePaths.register),
-                            child: Text(
-                              'Create Account',
-                              style: textTheme.bodyMedium?.copyWith(
-                                color: AuthStyle.accent,
-                                fontWeight: FontWeight.w700,
+                          ),
+                          const SizedBox(height: AuthStyle.s24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text("Don't have an account? ",
+                                  style: textTheme.bodyMedium),
+                              GestureDetector(
+                                onTap: isLoading
+                                    ? null
+                                    : () =>
+                                        context.push(AuthRoutePaths.register),
+                                child: Text(
+                                  'Create Account',
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: AuthStyle.accent,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                         ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
