@@ -1,14 +1,13 @@
-// GENERATED PLACEHOLDER FILE.
+// File generated for the LifeReset Firebase project (lifereset-556c7).
 //
-// In a real deployment this file is produced by the FlutterFire CLI:
+// The Android options below are the real values for the `com.lifereset.app`
+// Android app, taken from android/app/google-services.json. Only Android is
+// configured for this project; other platforms throw UnsupportedError until
+// they are added (re-run `flutterfire configure` to add iOS/web/etc.).
 //
-//     dart pub global activate flutterfire_cli
-//     flutterfire configure --project=<your-firebase-project-id>
-//
-// The values below are intentionally empty placeholders so that the project
-// foundation compiles without leaking real credentials into version control.
-// Running `flutterfire configure` will overwrite this file with the real
-// options for each supported platform.
+// A Firebase "apiKey" is a public project identifier, not a secret — access is
+// controlled by Firebase Security Rules and API-key restrictions — so it is
+// safe to commit, exactly as the FlutterFire CLI generates it.
 //
 // ignore_for_file: type=lint
 
@@ -28,20 +27,33 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      return web;
+      throw UnsupportedError(
+        'DefaultFirebaseOptions have not been configured for web - '
+        'you can reconfigure this by running the FlutterFire CLI again.',
+      );
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        return ios;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for ios - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.macOS:
-        return macos;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for macos - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.windows:
-        return windows;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for windows - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.linux:
         throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for linux.',
+          'DefaultFirebaseOptions have not been configured for linux - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
         );
       default:
         throw UnsupportedError(
@@ -50,50 +62,11 @@ class DefaultFirebaseOptions {
     }
   }
 
-  // NOTE: All values are placeholders. Replace via `flutterfire configure`.
-
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'REPLACE_WITH_WEB_API_KEY',
-    appId: 'REPLACE_WITH_WEB_APP_ID',
-    messagingSenderId: 'REPLACE_WITH_SENDER_ID',
-    projectId: 'REPLACE_WITH_PROJECT_ID',
-    authDomain: 'REPLACE_WITH_AUTH_DOMAIN',
-    storageBucket: 'REPLACE_WITH_STORAGE_BUCKET',
-    measurementId: 'REPLACE_WITH_MEASUREMENT_ID',
-  );
-
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'REPLACE_WITH_ANDROID_API_KEY',
-    appId: 'REPLACE_WITH_ANDROID_APP_ID',
-    messagingSenderId: 'REPLACE_WITH_SENDER_ID',
-    projectId: 'REPLACE_WITH_PROJECT_ID',
-    storageBucket: 'REPLACE_WITH_STORAGE_BUCKET',
-  );
-
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'REPLACE_WITH_IOS_API_KEY',
-    appId: 'REPLACE_WITH_IOS_APP_ID',
-    messagingSenderId: 'REPLACE_WITH_SENDER_ID',
-    projectId: 'REPLACE_WITH_PROJECT_ID',
-    storageBucket: 'REPLACE_WITH_STORAGE_BUCKET',
-    iosBundleId: 'com.lifereset.app',
-  );
-
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'REPLACE_WITH_MACOS_API_KEY',
-    appId: 'REPLACE_WITH_MACOS_APP_ID',
-    messagingSenderId: 'REPLACE_WITH_SENDER_ID',
-    projectId: 'REPLACE_WITH_PROJECT_ID',
-    storageBucket: 'REPLACE_WITH_STORAGE_BUCKET',
-    iosBundleId: 'com.lifereset.app',
-  );
-
-  static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'REPLACE_WITH_WINDOWS_API_KEY',
-    appId: 'REPLACE_WITH_WINDOWS_APP_ID',
-    messagingSenderId: 'REPLACE_WITH_SENDER_ID',
-    projectId: 'REPLACE_WITH_PROJECT_ID',
-    authDomain: 'REPLACE_WITH_AUTH_DOMAIN',
-    storageBucket: 'REPLACE_WITH_STORAGE_BUCKET',
+    apiKey: 'AIzaSyA6--MwKQfi10M0QWLUscgKS95rIpZirz0',
+    appId: '1:165332899972:android:23d372ad2589ca68414ad1',
+    messagingSenderId: '165332899972',
+    projectId: 'lifereset-556c7',
+    storageBucket: 'lifereset-556c7.firebasestorage.app',
   );
 }
