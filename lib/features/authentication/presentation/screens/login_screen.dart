@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/constants/app_constants.dart';
-import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/errors/failures.dart';
-import '../../../../shared/widgets/primary_button.dart';
-import '../../../../shared/widgets/responsive_layout.dart';
 import '../controllers/auth_controller.dart';
 import '../utils/auth_validators.dart';
+import '../widgets/auth_buttons.dart';
 import '../widgets/auth_error_dialog.dart';
-import '../widgets/auth_text_field.dart';
+import '../widgets/auth_fields.dart';
+import '../widgets/auth_illustration.dart';
+import '../widgets/auth_style.dart';
 import 'auth_routes.dart';
 
 /// Email / password sign-in screen — also the entry point for Google sign-in
@@ -54,6 +53,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final state = ref.watch(authControllerProvider);
     final isLoading = state.isLoading;
     final textTheme = Theme.of(context).textTheme;
+    final illoHeight =
+        (MediaQuery.sizeOf(context).height * 0.24).clamp(150.0, 220.0);
 
     ref.listen<AsyncValue<void>>(authControllerProvider, (_, next) {
       if (next is AsyncError && next.error is Failure && mounted) {
@@ -62,116 +63,140 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     return Scaffold(
+      backgroundColor: AuthStyle.pageBackground(context),
       body: SafeArea(
-        child: ContentContainer(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.lg,
-            vertical: AppSizes.md,
-          ),
-          child: SingleChildScrollView(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: AppSizes.xxl),
-                  Text('Welcome back', style: textTheme.headlineMedium),
-                  const SizedBox(height: AppSizes.xs),
-                  Text(
-                    'Sign in to continue your ${AppConstants.appName} journey.',
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(
+                  AuthStyle.s24, AuthStyle.s16, AuthStyle.s24, AuthStyle.s32),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: AuthStyle.s16),
+                    const SlideFadeIn(
+                      child: Center(child: AuthLogo()),
                     ),
-                  ),
-                  const SizedBox(height: AppSizes.xl),
-                  AuthTextField(
-                    controller: _emailController,
-                    label: 'Email',
-                    prefixIcon: Icons.mail_outline,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    validator: AuthValidators.email,
-                    enabled: !isLoading,
-                    autofillHints: const [AutofillHints.email],
-                  ),
-                  AuthTextField(
-                    controller: _passwordController,
-                    label: 'Password',
-                    prefixIcon: Icons.lock_outline,
-                    obscurable: true,
-                    textInputAction: TextInputAction.done,
-                    validator: AuthValidators.password,
-                    enabled: !isLoading,
-                    autofillHints: const [AutofillHints.password],
-                    onFieldSubmitted: (_) => _submit(),
-                  ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: isLoading
-                          ? null
-                          : () => context.push(AuthRoutePaths.forgotPassword),
-                      child: const Text('Forgot password?'),
+                    const SizedBox(height: AuthStyle.s24),
+                    SlideFadeIn(
+                      delay: const Duration(milliseconds: 60),
+                      child: Text('Welcome back!',
+                          textAlign: TextAlign.center,
+                          style: AuthStyle.title(context)),
                     ),
-                  ),
-                  const SizedBox(height: AppSizes.sm),
-                  PrimaryButton(
-                    label: 'Sign in',
-                    isLoading: isLoading,
-                    onPressed: _submit,
-                  ),
-                  const SizedBox(height: AppSizes.lg),
-                  const _OrDivider(label: 'or'),
-                  const SizedBox(height: AppSizes.lg),
-                  OutlinedButton.icon(
-                    onPressed: isLoading ? null : _signInWithGoogle,
-                    icon: const Icon(Icons.g_mobiledata, size: 28),
-                    label: const Text('Continue with Google'),
-                  ),
-                  const SizedBox(height: AppSizes.lg),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Don't have an account?",
-                        style: textTheme.bodyMedium,
+                    const SizedBox(height: AuthStyle.s8),
+                    SlideFadeIn(
+                      delay: const Duration(milliseconds: 90),
+                      child: Text(
+                        'Continue your healing journey.',
+                        textAlign: TextAlign.center,
+                        style: AuthStyle.subtitle(context),
                       ),
-                      TextButton(
-                        onPressed: isLoading
-                            ? null
-                            : () => context.push(AuthRoutePaths.register),
-                        child: const Text('Create one'),
+                    ),
+                    const SizedBox(height: AuthStyle.s24),
+                    SlideFadeIn(
+                      delay: const Duration(milliseconds: 120),
+                      child: SunriseIllustration(height: illoHeight),
+                    ),
+                    const SizedBox(height: AuthStyle.s24),
+                    SlideFadeIn(
+                      delay: const Duration(milliseconds: 160),
+                      child: Container(
+                        padding: const EdgeInsets.all(AuthStyle.s24),
+                        decoration: BoxDecoration(
+                          color: AuthStyle.cardSurface(context),
+                          borderRadius:
+                              BorderRadius.circular(AuthStyle.cardRadius),
+                          boxShadow: AuthStyle.softShadow(context),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            AuthTextInput(
+                              controller: _emailController,
+                              label: 'Email Address',
+                              hint: 'Enter your email',
+                              icon: Icons.mail_outline_rounded,
+                              keyboardType: TextInputType.emailAddress,
+                              textInputAction: TextInputAction.next,
+                              validator: AuthValidators.email,
+                              enabled: !isLoading,
+                              autofillHints: const [AutofillHints.email],
+                            ),
+                            const SizedBox(height: AuthStyle.s16),
+                            AuthTextInput(
+                              controller: _passwordController,
+                              label: 'Password',
+                              hint: 'Enter your password',
+                              icon: Icons.lock_outline_rounded,
+                              obscurable: true,
+                              textInputAction: TextInputAction.done,
+                              validator: AuthValidators.password,
+                              enabled: !isLoading,
+                              autofillHints: const [AutofillHints.password],
+                              onFieldSubmitted: (_) => _submit(),
+                            ),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: isLoading
+                                    ? null
+                                    : () => context
+                                        .push(AuthRoutePaths.forgotPassword),
+                                style: TextButton.styleFrom(
+                                    foregroundColor: AuthStyle.accent),
+                                child: const Text('Forgot Password?'),
+                              ),
+                            ),
+                            const SizedBox(height: AuthStyle.s8),
+                            AuthGradientButton(
+                              label: 'Sign In',
+                              isLoading: isLoading,
+                              onPressed: _submit,
+                            ),
+                            const SizedBox(height: AuthStyle.s24),
+                            const AuthOrDivider(label: 'OR CONTINUE WITH'),
+                            const SizedBox(height: AuthStyle.s24),
+                            GoogleSignInButton(
+                              onPressed: isLoading ? null : _signInWithGoogle,
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: AuthStyle.s24),
+                    SlideFadeIn(
+                      delay: const Duration(milliseconds: 200),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text("Don't have an account? ",
+                              style: textTheme.bodyMedium),
+                          GestureDetector(
+                            onTap: isLoading
+                                ? null
+                                : () => context.push(AuthRoutePaths.register),
+                            child: Text(
+                              'Create Account',
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: AuthStyle.accent,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
       ),
-    );
-  }
-}
-
-/// A labelled horizontal divider ("─── or ───").
-class _OrDivider extends StatelessWidget {
-  const _OrDivider({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.outlineVariant;
-    return Row(
-      children: [
-        Expanded(child: Divider(color: color)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSizes.md),
-          child: Text(label, style: Theme.of(context).textTheme.bodySmall),
-        ),
-        Expanded(child: Divider(color: color)),
-      ],
     );
   }
 }
