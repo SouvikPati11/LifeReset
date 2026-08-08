@@ -2,9 +2,8 @@ plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-    // NOTE: apply id("com.google.gms.google-services") here to enable Google
-    // Sign-In, once the SHA-1 is registered and google-services.json is
-    // regenerated (see android/settings.gradle.kts).
+    // Applies the Firebase/Google-services config (see settings.gradle.kts).
+    id("com.google.gms.google-services")
 }
 
 android {

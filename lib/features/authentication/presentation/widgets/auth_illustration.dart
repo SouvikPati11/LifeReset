@@ -74,6 +74,36 @@ class SunriseIllustration extends StatelessWidget {
   }
 }
 
+/// The login hero. Loads the bundled illustration asset
+/// (`assets/auth/hero_login.webp`) and falls back to [SunriseIllustration]
+/// (the CustomPainter) only if the asset can't be decoded, so the screen is
+/// never blank.
+class AuthHeroImage extends StatelessWidget {
+  const AuthHeroImage({
+    super.key,
+    required this.height,
+    this.asset = 'assets/auth/hero_login.webp',
+  });
+
+  final double height;
+  final String asset;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: height,
+      width: double.infinity,
+      child: Image.asset(
+        asset,
+        fit: BoxFit.cover,
+        alignment: Alignment.topCenter,
+        errorBuilder: (context, error, stackTrace) =>
+            SunriseIllustration(height: height),
+      ),
+    );
+  }
+}
+
 class _SunrisePainter extends CustomPainter {
   // Palette (a warm purple sunrise).
   static const _skyTop = Color(0xFFAC98DF);
@@ -299,26 +329,26 @@ class _SunrisePainter extends CustomPainter {
     final baseY = box.bottom;
     final paint = Paint()..color = _figure;
 
-    // Crossed-legs base: a wide flat mound with two knee bumps.
+    // Crossed-legs base: a compact rounded mound with two subtle knee bumps.
     canvas.drawOval(
       Rect.fromCenter(
           center: Offset(cx, baseY - h * 0.05),
-          width: w * 1.2,
-          height: h * 0.28),
+          width: w * 0.92,
+          height: h * 0.22),
       paint,
     );
     canvas.drawOval(
       Rect.fromCenter(
-          center: Offset(cx - w * 0.42, baseY - h * 0.02),
-          width: w * 0.5,
-          height: h * 0.2),
+          center: Offset(cx - w * 0.3, baseY - h * 0.02),
+          width: w * 0.34,
+          height: h * 0.15),
       paint,
     );
     canvas.drawOval(
       Rect.fromCenter(
-          center: Offset(cx + w * 0.42, baseY - h * 0.02),
-          width: w * 0.5,
-          height: h * 0.2),
+          center: Offset(cx + w * 0.3, baseY - h * 0.02),
+          width: w * 0.34,
+          height: h * 0.15),
       paint,
     );
 

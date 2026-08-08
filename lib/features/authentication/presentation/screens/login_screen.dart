@@ -107,7 +107,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       SlideFadeIn(
                         delay: const Duration(milliseconds: 120),
-                        child: SunriseIllustration(height: illoHeight),
+                        child: AuthHeroImage(height: illoHeight),
                       ),
                     ],
                   ),

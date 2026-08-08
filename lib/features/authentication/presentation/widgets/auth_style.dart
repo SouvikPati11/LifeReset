@@ -20,12 +20,12 @@ class AuthStyle {
     colors: [purpleStart, purpleEnd],
   );
 
-  // Component dimensions from the design spec.
+  // Component dimensions from the design spec / mockup.
   static const double fieldHeight = 56;
-  static const double fieldRadius = 18;
+  static const double fieldRadius = 16;
   static const double buttonHeight = 56;
-  static const double buttonRadius = 20;
-  static const double cardRadius = 24;
+  static const double buttonRadius = 16;
+  static const double cardRadius = 28;
   static const double radiusPill = 999;
 
   // 8px spacing grid.
