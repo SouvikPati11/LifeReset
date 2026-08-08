@@ -15,6 +15,7 @@ class OnboardingOptionTile extends StatelessWidget {
     required this.onTap,
     this.description,
     this.icon,
+    this.showCheck = false,
   });
 
   final String label;
@@ -22,6 +23,10 @@ class OnboardingOptionTile extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   final IconData? icon;
+
+  /// When true the selected indicator is a filled check (used by the problem
+  /// screen); otherwise it is the Figma radio-dot (used by Q1–Q3).
+  final bool showCheck;
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +95,7 @@ class OnboardingOptionTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: AppSizes.sm),
-                _Radio(selected: selected),
+                _Radio(selected: selected, showCheck: showCheck),
               ],
             ),
           ),
@@ -101,12 +106,36 @@ class OnboardingOptionTile extends StatelessWidget {
 }
 
 class _Radio extends StatelessWidget {
-  const _Radio({required this.selected});
+  const _Radio({required this.selected, required this.showCheck});
 
   final bool selected;
+  final bool showCheck;
 
   @override
   Widget build(BuildContext context) {
+    // Problem screen: filled circle + check.
+    if (showCheck) {
+      return AnimatedContainer(
+        duration: AppConstants.shortAnimation,
+        width: 22,
+        height: 22,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: selected ? OnboardingStyle.accent : const Color(0xFFCBC7DA),
+            width: 2,
+          ),
+          color: selected ? OnboardingStyle.accent : Colors.transparent,
+        ),
+        child: selected
+            ? const Center(
+                child: Icon(Icons.check_rounded, size: 14, color: Colors.white),
+              )
+            : null,
+      );
+    }
+
+    // Q1–Q3: ring + filled centre dot (Figma radio-dot).
     return AnimatedContainer(
       duration: AppConstants.shortAnimation,
       width: 22,
@@ -117,11 +146,17 @@ class _Radio extends StatelessWidget {
           color: selected ? OnboardingStyle.accent : const Color(0xFFCBC7DA),
           width: 2,
         ),
-        color: selected ? OnboardingStyle.accent : Colors.transparent,
       ),
       child: selected
-          ? const Center(
-              child: Icon(Icons.check_rounded, size: 14, color: Colors.white),
+          ? Center(
+              child: Container(
+                width: 10,
+                height: 10,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: OnboardingStyle.accent,
+                ),
+              ),
             )
           : null,
     );

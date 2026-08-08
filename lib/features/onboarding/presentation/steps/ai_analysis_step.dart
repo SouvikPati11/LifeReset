@@ -185,14 +185,16 @@ class _ChecklistRow extends StatelessWidget {
         children: [
           SizedBox(width: 22, height: 22, child: Center(child: leading)),
           const SizedBox(width: AppSizes.md),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: done || active ? FontWeight.w600 : FontWeight.w400,
-              color: done || active
-                  ? OnboardingStyle.ink
-                  : OnboardingStyle.bodyGray,
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: done || active ? FontWeight.w600 : FontWeight.w400,
+                color: done || active
+                    ? OnboardingStyle.ink
+                    : OnboardingStyle.bodyGray,
+              ),
             ),
           ),
         ],

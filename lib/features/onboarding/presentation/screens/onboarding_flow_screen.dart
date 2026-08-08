@@ -35,7 +35,10 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen> {
   static const int _analysis = 5;
   static const int _plan = 6;
   static const int _subscription = 7;
-  static const int _pageCount = 8;
+
+  // The Figma page-dots track the six answer/result steps (Q1 … subscription);
+  // the welcome / choose-problem intro screens sit on the first dot.
+  static const int _dotCount = 6;
 
   final PageController _pageController = PageController();
   Timer? _analysisTimer;
@@ -127,7 +130,10 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
-                child: OnboardingDots(count: _pageCount, current: _index),
+                child: OnboardingDots(
+                  count: _dotCount,
+                  current: (_index - 2).clamp(0, _dotCount - 1),
+                ),
               ),
             ],
           ),

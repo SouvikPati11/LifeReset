@@ -37,6 +37,7 @@ class ChooseProblemStep extends ConsumerWidget {
             description: option.description,
             icon: _icons[option],
             selected: problem == option,
+            showCheck: true,
             onTap: () => controller.selectProblem(option),
           ),
       ],
