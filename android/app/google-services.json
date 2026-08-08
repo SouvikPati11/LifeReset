@@ -12,7 +12,20 @@
           "package_name": "com.lifereset.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "165332899972-ua9j4b5513a8mp6nrq1fv3o5cbqfj0ep.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.lifereset.app",
+            "certificate_hash": "bee8b983c19b474648b688e1f483bd796f75c708"
+          }
+        },
+        {
+          "client_id": "165332899972-c150scdvfj0jv3qit03fdojf5j5l3j9g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyA6--MwKQfi10M0QWLUscgKS95rIpZirz0"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "165332899972-c150scdvfj0jv3qit03fdojf5j5l3j9g.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
