@@ -130,6 +130,7 @@ class _Feature extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             width: 40,
