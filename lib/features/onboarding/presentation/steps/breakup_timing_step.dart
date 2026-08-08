@@ -6,7 +6,7 @@ import '../controllers/onboarding_controller.dart';
 import '../widgets/onboarding_option_tile.dart';
 import '../widgets/onboarding_question_layout.dart';
 
-/// Q1 — "When did your breakup happen?"
+/// Q1 — "When did your breakup happen?" (options are text-only, per the Figma).
 class BreakupTimingStep extends ConsumerWidget {
   const BreakupTimingStep({super.key, required this.onContinue});
 
@@ -21,14 +21,14 @@ class BreakupTimingStep extends ConsumerWidget {
 
     return OnboardingQuestionLayout(
       title: 'When did your\nbreakup happen?',
-      subtitle: 'This helps us understand your situation.',
+      subtitle: 'This helps us understand your current stage.',
       continueEnabled: selected != null,
       onContinue: onContinue,
       options: [
         for (final option in BreakupTiming.values)
           OnboardingOptionTile(
             label: option.label,
-            leadingIcon: Icons.calendar_today_rounded,
+            description: option.description,
             selected: selected == option,
             onTap: () => controller.selectTiming(option),
           ),

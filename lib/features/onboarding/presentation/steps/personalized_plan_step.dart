@@ -2,33 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
-import '../../../../shared/widgets/primary_button.dart';
 import '../controllers/onboarding_controller.dart';
+import '../widgets/onboarding_style.dart';
 
 /// Screen 7 — Personalized Plan.
 ///
-/// Presents the (locally derived) recovery score and the program's feature
-/// tiles: 30-Day Plan, Recovery Score, Daily Tasks, AI Coach, Journal and Mood
-/// Tracking.
+/// A "Made for You" header, the (locally derived) recovery score, and the
+/// user's top priorities, matching the Figma.
 class PersonalizedPlanStep extends ConsumerWidget {
   const PersonalizedPlanStep({super.key, required this.onContinue});
 
   final VoidCallback onContinue;
 
+  static const List<(IconData, String)> _priorities = [
+    (Icons.spa_rounded, 'Let go of painful memories'),
+    (Icons.healing_rounded, 'Heal your emotional pain'),
+    (Icons.self_improvement_rounded, 'Build self love and confidence'),
+    (Icons.wb_sunny_rounded, 'Create a positive future'),
+  ];
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     final score = ref.read(onboardingControllerProvider.notifier).recoveryScore;
-
-    final features = <_PlanFeature>[
-      _PlanFeature(Icons.calendar_month_rounded, '30 Days\nPlan'),
-      _PlanFeature(Icons.trending_up_rounded, 'Recovery\nScore', value: '$score'),
-      _PlanFeature(Icons.checklist_rounded, 'Daily\nTasks'),
-      _PlanFeature(Icons.smart_toy_rounded, 'AI Coach'),
-      _PlanFeature(Icons.menu_book_rounded, 'Journal'),
-      _PlanFeature(Icons.sentiment_satisfied_rounded, 'Mood\nTracking'),
-    ];
 
     return Column(
       children: [
@@ -36,51 +31,60 @@ class PersonalizedPlanStep extends ConsumerWidget {
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(
               AppSizes.lg,
-              AppSizes.lg,
+              AppSizes.sm,
               AppSizes.lg,
               AppSizes.md,
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: colorScheme.primary,
-                  ),
-                  child: const Icon(
-                    Icons.check_rounded,
-                    color: Colors.white,
-                    size: 40,
-                  ),
-                ),
-                const SizedBox(height: AppSizes.lg),
-                Text(
-                  'Your Plan Is Ready!',
-                  textAlign: TextAlign.center,
-                  style: textTheme.headlineSmall,
-                ),
-                const SizedBox(height: AppSizes.xs),
-                Text(
-                  'We created a personalized 30-day recovery plan just for you.',
-                  textAlign: TextAlign.center,
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: AppSizes.xl),
-                GridView.count(
-                  crossAxisCount: 3,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: AppSizes.md,
-                  crossAxisSpacing: AppSizes.md,
-                  childAspectRatio: 0.92,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    for (final feature in features) _PlanTile(feature: feature),
+                    const Expanded(
+                      child: Text(
+                        'Your Personalized\nRecovery Plan',
+                        style: OnboardingStyle.title,
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.sm),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: OnboardingStyle.selectedFill,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: const Text(
+                        'Made for You',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: OnboardingStyle.accent,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
+                const SizedBox(height: AppSizes.sm),
+                const Text(
+                  "Based on your answers, here's your personalized plan.",
+                  style: OnboardingStyle.subtitle,
+                ),
+                const SizedBox(height: AppSizes.lg),
+                _ScoreCard(score: score),
+                const SizedBox(height: AppSizes.lg),
+                const Text(
+                  'Your Top Priorities',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: OnboardingStyle.ink,
+                  ),
+                ),
+                const SizedBox(height: AppSizes.sm),
+                for (final (icon, label) in _priorities)
+                  _PriorityRow(icon: icon, label: label),
               ],
             ),
           ),
@@ -92,60 +96,130 @@ class PersonalizedPlanStep extends ConsumerWidget {
             AppSizes.lg,
             AppSizes.lg,
           ),
-          child: PrimaryButton(
-            label: 'Continue to Plan',
-            onPressed: onContinue,
-          ),
+          child: OnboardingButton(label: 'Continue to Plan', onPressed: onContinue),
         ),
       ],
     );
   }
 }
 
-class _PlanFeature {
-  const _PlanFeature(this.icon, this.label, {this.value});
+class _ScoreCard extends StatelessWidget {
+  const _ScoreCard({required this.score});
 
-  final IconData icon;
-  final String label;
-  final String? value;
-}
-
-class _PlanTile extends StatelessWidget {
-  const _PlanTile({required this.feature});
-
-  final _PlanFeature feature;
+  final int score;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     return Container(
-      padding: const EdgeInsets.all(AppSizes.sm),
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSizes.lg),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-        border: Border.all(color: colorScheme.outlineVariant),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF3A2E6B), Color(0xFF5B3BC4)],
+        ),
+        borderRadius: BorderRadius.circular(20),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Row(
         children: [
-          if (feature.value != null)
-            Text(
-              feature.value!,
-              style: textTheme.titleLarge?.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.w700,
-              ),
-            )
-          else
-            Icon(feature.icon, color: colorScheme.primary, size: AppSizes.iconLg),
-          const SizedBox(height: AppSizes.sm),
-          Text(
-            feature.label,
-            textAlign: TextAlign.center,
-            style: textTheme.labelMedium,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Your Recovery Score',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withValues(alpha: 0.85),
+                  ),
+                ),
+                const SizedBox(height: AppSizes.xs),
+                Text(
+                  '$score%',
+                  style: const TextStyle(
+                    fontSize: 40,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: AppSizes.xs),
+                Text(
+                  'Good Start! Keep going 💜',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withValues(alpha: 0.85),
+                  ),
+                ),
+              ],
+            ),
           ),
+          SizedBox(
+            width: 76,
+            height: 76,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 76,
+                  height: 76,
+                  child: CircularProgressIndicator(
+                    value: score / 100,
+                    strokeWidth: 7,
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    valueColor:
+                        const AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PriorityRow extends StatelessWidget {
+  const _PriorityRow({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSizes.sm + 4),
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: BoxDecoration(
+        color: OnboardingStyle.surface,
+        borderRadius: BorderRadius.circular(OnboardingStyle.fieldRadius),
+        border: Border.all(color: OnboardingStyle.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: OnboardingStyle.chipBg,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 20, color: OnboardingStyle.accent),
+          ),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: OnboardingStyle.ink,
+              ),
+            ),
+          ),
+          const Icon(Icons.chevron_right_rounded, color: OnboardingStyle.bodyGray),
         ],
       ),
     );

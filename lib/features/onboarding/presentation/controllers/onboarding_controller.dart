@@ -27,13 +27,14 @@ class OnboardingState {
   bool get isSubmitting => submission.isLoading;
 
   OnboardingState copyWith({
+    OnboardingProblem? problem,
     BreakupTiming? breakupTiming,
     HurtMost? hurtMost,
     OnboardingGoal? goal,
     AsyncValue<void>? submission,
   }) {
     return OnboardingState(
-      problem: problem,
+      problem: problem ?? this.problem,
       breakupTiming: breakupTiming ?? this.breakupTiming,
       hurtMost: hurtMost ?? this.hurtMost,
       goal: goal ?? this.goal,
@@ -52,6 +53,9 @@ class OnboardingController extends AutoDisposeNotifier<OnboardingState> {
   @override
   OnboardingState build() => const OnboardingState();
 
+  void selectProblem(OnboardingProblem value) =>
+      state = state.copyWith(problem: value);
+
   void selectTiming(BreakupTiming value) =>
       state = state.copyWith(breakupTiming: value);
 
@@ -65,17 +69,17 @@ class OnboardingController extends AutoDisposeNotifier<OnboardingState> {
   /// personalized-looking number.
   int get recoveryScore {
     final timingBonus = switch (state.breakupTiming) {
-      BreakupTiming.today => 4,
-      BreakupTiming.last7Days => 8,
-      BreakupTiming.lastMonth => 14,
-      BreakupTiming.moreThan3Months => 20,
+      BreakupTiming.lessThan1Month => 4,
+      BreakupTiming.oneToThreeMonths => 9,
+      BreakupTiming.threeToSixMonths => 15,
+      BreakupTiming.moreThanSixMonths => 20,
       null => 0,
     };
     final goalBonus = switch (state.goal) {
       OnboardingGoal.moveOn => 18,
-      OnboardingGoal.feelHappyAgain => 16,
-      OnboardingGoal.sleepBetter => 12,
-      OnboardingGoal.stopThinking => 10,
+      OnboardingGoal.healFeelBetter => 16,
+      OnboardingGoal.buildBetterMe => 14,
+      OnboardingGoal.getExBack => 8,
       null => 0,
     };
     return (55 + timingBonus + goalBonus).clamp(0, 100);

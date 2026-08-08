@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
-import '../../../../shared/widgets/loading_view.dart';
 import '../controllers/onboarding_controller.dart';
+import '../widgets/onboarding_style.dart';
 
 /// Screen 8 — Subscription / 7-Day Trial.
 ///
@@ -14,12 +14,11 @@ class SubscriptionStep extends ConsumerWidget {
   const SubscriptionStep({super.key});
 
   static const List<String> _perks = [
-    'AI Coach – Get support anytime',
-    'Personalized Recovery Plan',
-    'Mood Tracking & Insights',
+    'Personalized AI Coaching',
     'Daily Tasks & Reminders',
-    'Journal & Progress Tracking',
-    'Cancel anytime, no questions asked',
+    'Mood Tracking & Insights',
+    'Unlimited Journal Entries',
+    'Progress Analytics',
   ];
 
   Future<void> _startTrial(BuildContext context, WidgetRef ref) async {
@@ -36,117 +35,93 @@ class SubscriptionStep extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     final isSubmitting = ref.watch(
       onboardingControllerProvider.select((s) => s.isSubmitting),
     );
 
-    final gradientEnd = Color.lerp(colorScheme.primary, Colors.black, 0.5)!;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [colorScheme.primary, gradientEnd],
-        ),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.md,
+        AppSizes.lg,
+        AppSizes.lg,
       ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSizes.lg),
-        child: Column(
-          children: [
-            const SizedBox(height: AppSizes.md),
-            const Icon(Icons.workspace_premium_rounded,
-                color: Colors.amber, size: 40),
-            const SizedBox(height: AppSizes.md),
-            Text(
-              'Start Your 7-Day Trial',
-              textAlign: TextAlign.center,
-              style: textTheme.headlineSmall?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
+      child: Column(
+        children: [
+          const Text('👑', style: TextStyle(fontSize: 64)),
+          const SizedBox(height: AppSizes.md),
+          const Text(
+            'Start Your 7-Day Trial',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: OnboardingStyle.ink,
             ),
-            const SizedBox(height: AppSizes.xs),
-            Text(
-              'Unlock everything and start your transformation journey.',
-              textAlign: TextAlign.center,
-              style: textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.85),
-              ),
-            ),
-            const SizedBox(height: AppSizes.lg),
-            const _PerksCard(perks: _perks),
-            const SizedBox(height: AppSizes.lg),
-            const _PriceRow(),
-            const SizedBox(height: AppSizes.lg),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: isSubmitting ? null : () => _startTrial(context, ref),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: colorScheme.primary,
-                ),
-                child: isSubmitting
-                    ? const InlineLoader(size: AppSizes.iconMd)
-                    : const Text('Start Free Trial'),
-              ),
-            ),
-            const SizedBox(height: AppSizes.md),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.lock_outline_rounded,
-                    size: AppSizes.iconSm,
-                    color: Colors.white.withValues(alpha: 0.8)),
-                const SizedBox(width: AppSizes.xs),
-                Text(
-                  'Secure payment. Cancel anytime.',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.8),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: AppSizes.xs),
+          const Text(
+            'Unlock your full recovery plan\nand premium features.',
+            textAlign: TextAlign.center,
+            style: OnboardingStyle.subtitle,
+          ),
+          const SizedBox(height: AppSizes.lg),
+          const _PerksCard(perks: _perks),
+          const SizedBox(height: AppSizes.lg),
+          const _PriceCard(),
+          const SizedBox(height: AppSizes.lg),
+          OnboardingButton(
+            label: 'Start Free Trial',
+            isLoading: isSubmitting,
+            onPressed: isSubmitting ? null : () => _startTrial(context, ref),
+          ),
+          const SizedBox(height: AppSizes.md),
+          const Text(
+            'Cancel anytime. No commitment.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: OnboardingStyle.bodyGray),
+          ),
+        ],
       ),
     );
   }
 }
 
 class _PerksCard extends StatelessWidget {
-  const _PerksCard({super.key, required this.perks});
+  const _PerksCard({required this.perks});
 
   final List<String> perks;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSizes.lg),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        color: OnboardingStyle.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: OnboardingStyle.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (final perk in perks)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
+              padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
               child: Row(
                 children: [
-                  Icon(Icons.check_circle_rounded,
-                      color: colorScheme.primary, size: AppSizes.iconMd),
-                  const SizedBox(width: AppSizes.sm),
+                  const Icon(Icons.check_circle_rounded,
+                      color: OnboardingStyle.accent, size: AppSizes.iconMd),
+                  const SizedBox(width: AppSizes.md),
                   Expanded(
-                    child: Text(perk, style: textTheme.bodyMedium),
+                    child: Text(
+                      perk,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: OnboardingStyle.ink,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -157,50 +132,56 @@ class _PerksCard extends StatelessWidget {
   }
 }
 
-class _PriceRow extends StatelessWidget {
-  const _PriceRow({super.key});
+class _PriceCard extends StatelessWidget {
+  const _PriceCard();
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text.rich(
-          TextSpan(
-            children: [
-              TextSpan(
-                text: '₹299',
-                style: textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              TextSpan(
-                text: ' / month',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.85),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: AppSizes.md),
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.md,
-            vertical: AppSizes.xs,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(AppSizes.radiusPill),
-          ),
-          child: Text(
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.lg,
+        vertical: AppSizes.lg,
+      ),
+      decoration: BoxDecoration(
+        color: OnboardingStyle.selectedFill,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: OnboardingStyle.accent.withValues(alpha: 0.4)),
+      ),
+      child: const Column(
+        children: [
+          Text(
             '7-Day Free Trial',
-            style: textTheme.labelMedium?.copyWith(color: Colors.white),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: OnboardingStyle.ink,
+            ),
           ),
-        ),
-      ],
+          SizedBox(height: AppSizes.sm),
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: '₹299',
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    color: OnboardingStyle.accent,
+                  ),
+                ),
+                TextSpan(
+                  text: ' / month after trial',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: OnboardingStyle.bodyGray,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

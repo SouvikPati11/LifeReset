@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../widgets/onboarding_style.dart';
 
 /// Screen 6 — AI Analysis.
 ///
-/// A purely visual "analyzing" state with a pulsing halo. It does not call any
-/// AI service; the hosting flow advances to the plan after a short delay.
+/// A purely visual "analyzing" state: a brain inside pulsing radar rings and a
+/// checklist that fills in over a few seconds. It calls no AI service; the
+/// hosting flow advances to the plan after a short delay.
 class AiAnalysisStep extends StatefulWidget {
   const AiAnalysisStep({super.key});
 
@@ -14,127 +16,186 @@ class AiAnalysisStep extends StatefulWidget {
 }
 
 class _AiAnalysisStepState extends State<AiAnalysisStep>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
+    with TickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1600),
   )..repeat();
 
+  late final AnimationController _progress = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2600),
+  )..forward();
+
+  static const _steps = [
+    'Understanding your situation',
+    'Identifying patterns',
+    'Creating personalized plan',
+    'Preparing your roadmap',
+  ];
+
   @override
   void dispose() {
-    _controller.dispose();
+    _pulse.dispose();
+    _progress.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     return Padding(
       padding: const EdgeInsets.all(AppSizes.lg),
       child: Column(
         children: [
           const Spacer(),
-          Text(
-            'Analyzing your answers…',
+          const Text(
+            'Analyzing your answers',
             textAlign: TextAlign.center,
-            style: textTheme.headlineSmall,
-          ),
-          const SizedBox(height: AppSizes.sm),
-          Text(
-            'Creating your personal recovery plan…',
-            textAlign: TextAlign.center,
-            style: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: OnboardingStyle.ink,
             ),
           ),
+          const SizedBox(height: AppSizes.sm),
+          const Text(
+            'Our AI is creating your\npersonalized recovery plan…',
+            textAlign: TextAlign.center,
+            style: OnboardingStyle.subtitle,
+          ),
           const SizedBox(height: AppSizes.xxl),
-          AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              final t = _controller.value;
-              return SizedBox(
-                width: 200,
-                height: 200,
-                child: Stack(
+          SizedBox(
+            width: 220,
+            height: 220,
+            child: AnimatedBuilder(
+              animation: _pulse,
+              builder: (context, child) {
+                final t = _pulse.value;
+                return Stack(
                   alignment: Alignment.center,
                   children: [
-                    _Halo(scale: 0.7 + t * 0.5, opacity: (1 - t) * 0.4,
-                        color: colorScheme.primary),
-                    _Halo(scale: 0.6 + t * 0.3, opacity: (1 - t) * 0.6,
-                        color: colorScheme.primary),
+                    _Ring(size: 120 + t * 90, opacity: (1 - t) * 0.35),
+                    _Ring(size: 120 + t * 55, opacity: (1 - t) * 0.5),
                     child!,
                   ],
+                );
+              },
+              child: Container(
+                width: 108,
+                height: 108,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: OnboardingStyle.gradient,
                 ),
-              );
-            },
-            child: Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: colorScheme.primary,
-              ),
-              child: const Icon(
-                Icons.auto_awesome_rounded,
-                color: Colors.white,
-                size: 40,
+                child: const Icon(Icons.psychology_rounded,
+                    color: Colors.white, size: 52),
               ),
             ),
           ),
           const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.md,
-              vertical: AppSizes.sm,
-            ),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(AppSizes.radiusPill),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.auto_awesome_rounded,
-                    size: AppSizes.iconSm, color: colorScheme.primary),
-                const SizedBox(width: AppSizes.sm),
-                Text(
-                  'This will only take a few seconds',
-                  style: textTheme.bodySmall,
+          AnimatedBuilder(
+            animation: _progress,
+            builder: (context, _) {
+              final active = (_progress.value * _steps.length)
+                  .floor()
+                  .clamp(0, _steps.length - 1);
+              return Container(
+                padding: const EdgeInsets.all(AppSizes.md),
+                decoration: BoxDecoration(
+                  color: OnboardingStyle.surface,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: OnboardingStyle.border),
                 ),
-              ],
-            ),
+                child: Column(
+                  children: [
+                    for (var i = 0; i < _steps.length; i++)
+                      _ChecklistRow(
+                        label: _steps[i],
+                        done: i < active,
+                        active: i == active,
+                      ),
+                  ],
+                ),
+              );
+            },
           ),
-          const SizedBox(height: AppSizes.md),
+          const SizedBox(height: AppSizes.sm),
         ],
       ),
     );
   }
 }
 
-class _Halo extends StatelessWidget {
-  const _Halo({
-    required this.scale,
-    required this.opacity,
-    required this.color,
-  });
+class _Ring extends StatelessWidget {
+  const _Ring({required this.size, required this.opacity});
 
-  final double scale;
+  final double size;
   final double opacity;
-  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return Transform.scale(
-      scale: scale,
-      child: Container(
-        width: 160,
-        height: 160,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: color.withValues(alpha: opacity.clamp(0.0, 1.0)),
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: OnboardingStyle.accent.withValues(alpha: opacity.clamp(0, 1)),
+          width: 2,
         ),
+      ),
+    );
+  }
+}
+
+class _ChecklistRow extends StatelessWidget {
+  const _ChecklistRow({
+    required this.label,
+    required this.done,
+    required this.active,
+  });
+
+  final String label;
+  final bool done;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget leading;
+    if (done) {
+      leading = const Icon(Icons.check_circle_rounded,
+          color: OnboardingStyle.accent, size: 22);
+    } else if (active) {
+      leading = const SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(
+          strokeWidth: 2.4,
+          valueColor: AlwaysStoppedAnimation<Color>(OnboardingStyle.accent),
+        ),
+      );
+    } else {
+      leading = const Icon(Icons.circle_outlined,
+          color: Color(0xFFCBC7DA), size: 22);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          SizedBox(width: 22, height: 22, child: Center(child: leading)),
+          const SizedBox(width: AppSizes.md),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: done || active ? FontWeight.w600 : FontWeight.w400,
+              color: done || active
+                  ? OnboardingStyle.ink
+                  : OnboardingStyle.bodyGray,
+            ),
+          ),
+        ],
       ),
     );
   }

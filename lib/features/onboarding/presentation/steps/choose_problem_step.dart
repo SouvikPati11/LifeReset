@@ -1,98 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/constants/app_sizes.dart';
+import '../../domain/entities/onboarding_answers.dart';
 import '../controllers/onboarding_controller.dart';
+import '../widgets/onboarding_option_tile.dart';
 import '../widgets/onboarding_question_layout.dart';
 
-/// Screen 2 — "What do you want to improve?"
-///
-/// Version 1 offers only Breakup Recovery, which is pre-selected, so Continue is
-/// always enabled.
+/// Screen 2 — "What brings you here today?"
 class ChooseProblemStep extends ConsumerWidget {
   const ChooseProblemStep({super.key, required this.onContinue});
 
   final VoidCallback onContinue;
 
+  static const Map<OnboardingProblem, IconData> _icons = {
+    OnboardingProblem.breakupRecovery: Icons.favorite_rounded,
+    OnboardingProblem.anxietyStress: Icons.spa_rounded,
+    OnboardingProblem.lowConfidence: Icons.person_rounded,
+    OnboardingProblem.overthinking: Icons.psychology_rounded,
+  };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final problem =
         ref.watch(onboardingControllerProvider.select((s) => s.problem));
+    final controller = ref.read(onboardingControllerProvider.notifier);
 
     return OnboardingQuestionLayout(
-      title: 'What do you want\nto improve?',
-      subtitle: 'Select the area you want to focus on.',
+      title: 'What brings you here\ntoday?',
+      subtitle: 'Choose the area you want to work on.',
       continueEnabled: true,
       onContinue: onContinue,
       options: [
-        _ProblemCard(
-          title: problem.label,
-          description: 'Heal your heart and build a better you.',
-          selected: true,
-        ),
+        for (final option in OnboardingProblem.values)
+          OnboardingOptionTile(
+            label: option.label,
+            description: option.description,
+            icon: _icons[option],
+            selected: problem == option,
+            onTap: () => controller.selectProblem(option),
+          ),
       ],
-    );
-  }
-}
-
-class _ProblemCard extends StatelessWidget {
-  const _ProblemCard({
-    required this.title,
-    required this.description,
-    required this.selected,
-  });
-
-  final String title;
-  final String description;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.lg,
-        vertical: AppSizes.xl,
-      ),
-      decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-        border: Border.all(
-          color: selected ? colorScheme.primary : colorScheme.outlineVariant,
-          width: selected ? 1.6 : 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          Align(
-            alignment: Alignment.topRight,
-            child: Icon(
-              selected
-                  ? Icons.check_circle_rounded
-                  : Icons.circle_outlined,
-              color: selected ? colorScheme.primary : colorScheme.outline,
-            ),
-          ),
-          const Text('💔', style: TextStyle(fontSize: 56)),
-          const SizedBox(height: AppSizes.md),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: AppSizes.xs),
-          Text(
-            description,
-            textAlign: TextAlign.center,
-            style: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
