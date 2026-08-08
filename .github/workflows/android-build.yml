@@ -60,7 +60,23 @@ jobs:
         run: flutter gen-l10n
 
       - name: Build release APK
-        run: flutter build apk --release
+        env:
+          # Supplied from GitHub repo secrets. Absent on fork PRs — the Gradle
+          # release config then falls back to debug signing so the build still
+          # succeeds (see android/app/build.gradle.kts).
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+            export KEYSTORE_PATH="$RUNNER_TEMP/release.keystore"
+            echo "Release keystore configured — building a stably-signed release."
+          else
+            echo "No ANDROID_KEYSTORE_BASE64 secret — release will use debug signing."
+          fi
+          flutter build apk --release
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
