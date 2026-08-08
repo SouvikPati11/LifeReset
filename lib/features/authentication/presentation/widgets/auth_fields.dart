@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'auth_style.dart';
 
-/// A premium auth input: external label, 56-high rounded field (radius 18),
-/// soft border with a purple focus state, a tinted prefix icon, and an animated
-/// show/hide toggle for password fields. Wraps [TextFormField] so all existing
-/// validation / controller wiring is preserved by the caller.
+/// A premium auth input matching the Figma: external bold label, a 58-high
+/// white rounded field with a soft lavender border, a purple prefix icon, and
+/// an animated show/hide toggle for password fields. Wraps [TextFormField] so
+/// all existing validation / controller wiring is preserved by the caller.
 class AuthTextInput extends StatefulWidget {
   const AuthTextInput({
     super.key,
@@ -63,19 +63,15 @@ class _AuthTextInputState extends State<AuthTextInput> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final iconColor =
-        _focused ? AuthStyle.accent : colorScheme.onSurfaceVariant;
-
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(AuthStyle.fieldRadius),
-      borderSide: BorderSide(color: colorScheme.outlineVariant),
+      borderSide: const BorderSide(color: AuthStyle.fieldBorder),
     );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(widget.label, style: AuthStyle.label(context)),
+        Text(widget.label, style: AuthStyle.label),
         const SizedBox(height: AuthStyle.s8),
         TextFormField(
           controller: widget.controller,
@@ -93,13 +89,18 @@ class _AuthTextInputState extends State<AuthTextInput> {
           cursorColor: AuthStyle.accent,
           decoration: InputDecoration(
             hintText: widget.hint,
+            hintStyle: const TextStyle(
+              color: AuthStyle.placeholder,
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+            ),
             filled: true,
-            fillColor: AuthStyle.cardSurface(context),
+            fillColor: AuthStyle.surface,
             constraints:
                 const BoxConstraints(minHeight: AuthStyle.fieldHeight),
             contentPadding: const EdgeInsets.symmetric(
                 horizontal: AuthStyle.s16, vertical: 18),
-            prefixIcon: Icon(widget.icon, size: 20, color: iconColor),
+            prefixIcon: Icon(widget.icon, size: 20, color: AuthStyle.accent),
             suffixIcon: widget.obscurable
                 ? IconButton(
                     onPressed: () => setState(() => _obscured = !_obscured),
@@ -114,7 +115,7 @@ class _AuthTextInputState extends State<AuthTextInput> {
                             : Icons.visibility_off_outlined,
                         key: ValueKey(_obscured),
                         size: 20,
-                        color: colorScheme.onSurfaceVariant,
+                        color: AuthStyle.iconMuted,
                       ),
                     ),
                   )
@@ -123,6 +124,12 @@ class _AuthTextInputState extends State<AuthTextInput> {
             enabledBorder: border,
             focusedBorder: border.copyWith(
               borderSide: const BorderSide(color: AuthStyle.accent, width: 1.6),
+            ),
+            errorBorder: border.copyWith(
+              borderSide: const BorderSide(color: Color(0xFFE0576B)),
+            ),
+            focusedErrorBorder: border.copyWith(
+              borderSide: const BorderSide(color: Color(0xFFE0576B), width: 1.6),
             ),
           ),
         ),
@@ -162,7 +169,7 @@ class PasswordStrength {
       case 3:
         return const PasswordStrength(3, 'Good', AuthStyle.purpleEnd);
       default:
-        return const PasswordStrength(4, 'Strong', Color(0xFF2E9E63));
+        return const PasswordStrength(4, 'Strong', AuthStyle.strongGreen);
     }
   }
 }
@@ -177,7 +184,6 @@ class PasswordStrengthMeter extends StatelessWidget {
   Widget build(BuildContext context) {
     final strength = PasswordStrength.of(password);
     final filled = password.isEmpty ? 0 : strength.score + 1; // 1..5
-    final empty = Theme.of(context).colorScheme.outlineVariant;
 
     return Row(
       children: [
@@ -189,9 +195,11 @@ class PasswordStrengthMeter extends StatelessWidget {
                 Expanded(
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
-                    height: 5,
+                    height: 6,
                     decoration: BoxDecoration(
-                      color: i < filled ? AuthStyle.purpleEnd : empty,
+                      color: i < filled
+                          ? AuthStyle.purpleEnd
+                          : const Color(0xFFE6E4F0),
                       borderRadius: BorderRadius.circular(AuthStyle.radiusPill),
                     ),
                   ),
@@ -229,8 +237,8 @@ class AuthTermsCheckbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final linkStyle = textTheme.bodyMedium?.copyWith(
+    const linkStyle = TextStyle(
+      fontSize: 14,
       color: AuthStyle.accent,
       fontWeight: FontWeight.w600,
     );
@@ -238,17 +246,24 @@ class AuthTermsCheckbox extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SizedBox(
-          width: 24,
-          height: 24,
-          child: Checkbox(
-            value: value,
-            onChanged: (v) => onChanged(v ?? false),
-            activeColor: AuthStyle.accent,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(6),
+        GestureDetector(
+          onTap: () => onChanged(!value),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: value ? AuthStyle.accent : AuthStyle.surface,
+              borderRadius: BorderRadius.circular(7),
+              border: Border.all(
+                color: value ? AuthStyle.accent : AuthStyle.fieldBorder,
+                width: 1.6,
+              ),
             ),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            child: value
+                ? const Icon(Icons.check_rounded,
+                    size: 16, color: Colors.white)
+                : null,
           ),
         ),
         const SizedBox(width: AuthStyle.s12),
@@ -257,12 +272,21 @@ class AuthTermsCheckbox extends StatelessWidget {
             onTap: () => onChanged(!value),
             child: Text.rich(
               TextSpan(
-                style: textTheme.bodyMedium,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AuthStyle.labelInk,
+                  height: 1.4,
+                ),
                 children: [
                   const TextSpan(text: 'I agree to the '),
-                  TextSpan(text: 'Terms of Service', style: linkStyle),
+                  TextSpan(
+                    text: 'Terms of Service',
+                    style: linkStyle.copyWith(
+                        decoration: TextDecoration.underline,
+                        decorationColor: AuthStyle.accent),
+                  ),
                   const TextSpan(text: ' and '),
-                  TextSpan(text: 'Privacy Policy', style: linkStyle),
+                  const TextSpan(text: 'Privacy Policy', style: linkStyle),
                 ],
               ),
             ),

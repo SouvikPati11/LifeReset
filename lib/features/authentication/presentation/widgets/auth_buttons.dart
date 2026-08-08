@@ -41,7 +41,7 @@ class _AuthGradientButtonState extends State<AuthGradientButton> {
           decoration: BoxDecoration(
             gradient: AuthStyle.gradient,
             borderRadius: BorderRadius.circular(AuthStyle.buttonRadius),
-            boxShadow: enabled ? AuthStyle.buttonShadow(context) : null,
+            boxShadow: enabled ? AuthStyle.buttonShadow : null,
           ),
           child: Material(
             color: Colors.transparent,
@@ -98,35 +98,34 @@ class GoogleSignInButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Material(
-      color: AuthStyle.cardSurface(context),
-      borderRadius: BorderRadius.circular(AuthStyle.fieldRadius),
+      color: AuthStyle.surface,
+      borderRadius: BorderRadius.circular(AuthStyle.buttonRadius),
       child: InkWell(
-        borderRadius: BorderRadius.circular(AuthStyle.fieldRadius),
+        borderRadius: BorderRadius.circular(AuthStyle.buttonRadius),
         onTap: onPressed,
         child: Container(
           height: AuthStyle.buttonHeight,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AuthStyle.fieldRadius),
-            border: Border.all(color: colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(AuthStyle.buttonRadius),
+            border: Border.all(color: AuthStyle.fieldBorder),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(
-                width: 20,
-                height: 20,
+                width: 22,
+                height: 22,
                 child: CustomPaint(painter: _GoogleGPainter()),
               ),
               const SizedBox(width: AuthStyle.s12),
               Text(
                 label,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                  color: AuthStyle.ink,
                 ),
               ),
             ],
@@ -187,23 +186,22 @@ class AuthOrDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Expanded(child: Divider(color: colorScheme.outlineVariant)),
+        const Expanded(child: Divider(color: AuthStyle.divider, height: 1)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AuthStyle.s16),
           child: Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               letterSpacing: 1,
-              color: colorScheme.onSurfaceVariant,
+              color: AuthStyle.bodyGray,
             ),
           ),
         ),
-        Expanded(child: Divider(color: colorScheme.outlineVariant)),
+        const Expanded(child: Divider(color: AuthStyle.divider, height: 1)),
       ],
     );
   }

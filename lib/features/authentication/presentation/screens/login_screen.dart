@@ -52,9 +52,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(authControllerProvider);
     final isLoading = state.isLoading;
-    final textTheme = Theme.of(context).textTheme;
     final media = MediaQuery.of(context);
-    final illoHeight = (media.size.height * 0.28).clamp(190.0, 280.0);
+    final illoHeight = (media.size.height * 0.26).clamp(180.0, 260.0);
 
     ref.listen<AsyncValue<void>>(authControllerProvider, (_, next) {
       if (next is AsyncError && next.error is Failure && mounted) {
@@ -63,9 +62,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     return Scaffold(
-      // White scaffold so the sheet blends; the header region paints its own
-      // lavender tint behind the logo / title and the illustration.
-      backgroundColor: AuthStyle.cardSurface(context),
+      backgroundColor: AuthStyle.surface,
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
@@ -73,64 +70,55 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // ── Header + full-bleed illustration on the lavender tint ──
-                Container(
-                  color: AuthStyle.pageBackground(context),
+                // ── Lavender header + full-bleed hero illustration ──
+                DecoratedBox(
+                  decoration:
+                      const BoxDecoration(gradient: AuthStyle.pageGradient),
                   child: Column(
                     children: [
-                      SafeArea(
+                      const SafeArea(
                         bottom: false,
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(
-                              AuthStyle.s24, AuthStyle.s16, AuthStyle.s24, 0),
+                          padding: EdgeInsets.fromLTRB(
+                              AuthStyle.s24, AuthStyle.s24, AuthStyle.s24, 0),
                           child: Column(
                             children: [
-                              const SlideFadeIn(child: AuthLogo()),
-                              const SizedBox(height: AuthStyle.s16),
+                              SlideFadeIn(child: AuthLogo()),
+                              SizedBox(height: AuthStyle.s20),
                               SlideFadeIn(
-                                delay: const Duration(milliseconds: 60),
+                                delay: Duration(milliseconds: 60),
                                 child: Text('Welcome back!',
                                     textAlign: TextAlign.center,
-                                    style: AuthStyle.title(context)),
+                                    style: AuthStyle.title),
                               ),
-                              const SizedBox(height: AuthStyle.s8),
+                              SizedBox(height: AuthStyle.s8),
                               SlideFadeIn(
-                                delay: const Duration(milliseconds: 90),
+                                delay: Duration(milliseconds: 90),
                                 child: Text('Continue your healing journey.',
                                     textAlign: TextAlign.center,
-                                    style: AuthStyle.subtitle(context)),
+                                    style: AuthStyle.subtitle),
                               ),
-                              const SizedBox(height: AuthStyle.s16),
                             ],
                           ),
                         ),
                       ),
                       SlideFadeIn(
                         delay: const Duration(milliseconds: 120),
+                        offset: 0,
                         child: AuthHeroImage(height: illoHeight),
                       ),
                     ],
                   ),
                 ),
-                // ── Form sheet overlapping the illustration ──
+                // ── White form card overlapping the hero ──
                 Transform.translate(
                   offset: const Offset(0, -28),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: AuthStyle.cardSurface(context),
+                      color: AuthStyle.surface,
                       borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(28)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(
-                              alpha:
-                                  Theme.of(context).brightness == Brightness.dark
-                                      ? 0.4
-                                      : 0.05),
-                          blurRadius: 20,
-                          offset: const Offset(0, -6),
-                        ),
-                      ],
+                          top: Radius.circular(AuthStyle.cardRadius)),
+                      boxShadow: AuthStyle.cardShadow,
                     ),
                     padding: EdgeInsets.fromLTRB(AuthStyle.s24, AuthStyle.s32,
                         AuthStyle.s24, AuthStyle.s24 + media.padding.bottom),
@@ -153,7 +141,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               autofillHints: const [AutofillHints.email],
                             ),
                           ),
-                          const SizedBox(height: AuthStyle.s16),
+                          const SizedBox(height: AuthStyle.s20),
                           SlideFadeIn(
                             delay: const Duration(milliseconds: 190),
                             child: AuthTextInput(
@@ -169,19 +157,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               onFieldSubmitted: (_) => _submit(),
                             ),
                           ),
+                          const SizedBox(height: AuthStyle.s12),
                           Align(
                             alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: isLoading
+                            child: GestureDetector(
+                              onTap: isLoading
                                   ? null
                                   : () => context
                                       .push(AuthRoutePaths.forgotPassword),
-                              style: TextButton.styleFrom(
-                                  foregroundColor: AuthStyle.accent),
-                              child: const Text('Forgot Password?'),
+                              child: const Text('Forgot Password?',
+                                  style: AuthStyle.link),
                             ),
                           ),
-                          const SizedBox(height: AuthStyle.s8),
+                          const SizedBox(height: AuthStyle.s24),
                           SlideFadeIn(
                             delay: const Duration(milliseconds: 220),
                             child: AuthGradientButton(
@@ -190,7 +178,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               onPressed: _submit,
                             ),
                           ),
-                          const SizedBox(height: AuthStyle.s24),
+                          const SizedBox(height: AuthStyle.s28),
                           const AuthOrDivider(label: 'OR CONTINUE WITH'),
                           const SizedBox(height: AuthStyle.s24),
                           SlideFadeIn(
@@ -199,24 +187,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               onPressed: isLoading ? null : _signInWithGoogle,
                             ),
                           ),
-                          const SizedBox(height: AuthStyle.s24),
+                          const SizedBox(height: AuthStyle.s28),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text("Don't have an account? ",
-                                  style: textTheme.bodyMedium),
+                              const Text("Don't have an account? ",
+                                  style: AuthStyle.muted),
                               GestureDetector(
                                 onTap: isLoading
                                     ? null
                                     : () =>
                                         context.push(AuthRoutePaths.register),
-                                child: Text(
-                                  'Create Account',
-                                  style: textTheme.bodyMedium?.copyWith(
-                                    color: AuthStyle.accent,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
+                                child: const Text('Create Account',
+                                    style: AuthStyle.link),
                               ),
                             ],
                           ),

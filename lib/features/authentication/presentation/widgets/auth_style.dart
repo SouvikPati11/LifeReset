@@ -2,99 +2,121 @@ import 'package:flutter/material.dart';
 
 /// Local visual identity for the auth screens (login / register).
 ///
-/// The app's global Material theme is intentionally left untouched; these
-/// purple brand tokens are applied only within the authentication surfaces so
-/// they match the LifeReset onboarding look without changing the rest of the
-/// app.
+/// The app's global Material theme is intentionally left untouched. The auth
+/// surfaces always render with this **fixed light palette** so they match the
+/// approved Figma design regardless of the device's theme brightness (this is
+/// why the login card no longer turns dark on a dark-mode device).
 class AuthStyle {
   const AuthStyle._();
 
-  // Brand purple gradient (#6D28FF → #8B5CF6).
+  // ── Brand purple ─────────────────────────────────────────────────────────
   static const Color purpleStart = Color(0xFF6D28FF);
   static const Color purpleEnd = Color(0xFF8B5CF6);
-  static const Color accent = Color(0xFF6D28FF);
+  static const Color accent = Color(0xFF7C3AED);
 
+  /// The gradient used on the primary CTA (left → right).
   static const LinearGradient gradient = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
     colors: [purpleStart, purpleEnd],
   );
 
-  // Component dimensions from the design spec / mockup.
-  static const double fieldHeight = 56;
-  static const double fieldRadius = 16;
-  static const double buttonHeight = 56;
-  static const double buttonRadius = 16;
-  static const double cardRadius = 28;
+  // ── Fixed light palette (matches the Figma mockup) ────────────────────────
+  /// Lavender tint behind the logo / hero at the top of the login screen.
+  static const Color pageTop = Color(0xFFEDE7F9);
+  static const Color pageBottom = Color(0xFFF8F5FE);
+  static const Color surface = Color(0xFFFFFFFF); // white card + inputs
+  static const Color ink = Color(0xFF1A1B2E); // headings
+  static const Color labelInk = Color(0xFF2A2B3C); // field labels
+  static const Color bodyGray = Color(0xFF6B7280); // subtitles / muted text
+  static const Color placeholder = Color(0xFF9AA0AC); // input hints
+  static const Color fieldBorder = Color(0xFFE6E4F0); // input outline
+  static const Color divider = Color(0xFFE6E4F0);
+  static const Color iconMuted = Color(0xFF6B7280); // eye / neutral icons
+  static const Color strongGreen = Color(0xFF22C55E);
+
+  /// Soft top-to-bottom lavender background for the auth pages.
+  static const LinearGradient pageGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [pageTop, pageBottom],
+  );
+
+  // ── Dimensions (from the mockup) ──────────────────────────────────────────
+  static const double fieldHeight = 58;
+  static const double fieldRadius = 14;
+  static const double buttonHeight = 58;
+  static const double buttonRadius = 14;
+  static const double cardRadius = 32;
   static const double radiusPill = 999;
 
   // 8px spacing grid.
   static const double s8 = 8;
   static const double s12 = 12;
   static const double s16 = 16;
+  static const double s20 = 20;
   static const double s24 = 24;
+  static const double s28 = 28;
   static const double s32 = 32;
   static const double s40 = 40;
 
-  /// The soft page background (a subtle lavender tint over the theme surface).
-  static Color pageBackground(BuildContext context) {
-    final surface = Theme.of(context).colorScheme.surface;
-    return Color.alphaBlend(purpleEnd.withValues(alpha: 0.05), surface);
-  }
+  static List<BoxShadow> get buttonShadow => [
+        BoxShadow(
+          color: purpleStart.withValues(alpha: 0.32),
+          blurRadius: 24,
+          offset: const Offset(0, 12),
+        ),
+      ];
 
-  /// Card / input surface — white in light mode, theme surface in dark mode.
-  static Color cardSurface(BuildContext context) =>
-      Theme.of(context).colorScheme.surface;
+  /// Soft upward shadow for the white form card overlapping the hero.
+  static List<BoxShadow> get cardShadow => [
+        BoxShadow(
+          color: const Color(0xFF6D28FF).withValues(alpha: 0.06),
+          blurRadius: 24,
+          offset: const Offset(0, -8),
+        ),
+      ];
 
-  static List<BoxShadow> softShadow(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    return [
-      BoxShadow(
-        color: Colors.black.withValues(alpha: dark ? 0.35 : 0.06),
-        blurRadius: 24,
-        offset: const Offset(0, 12),
-      ),
-    ];
-  }
+  // ── Typography ────────────────────────────────────────────────────────────
+  static const TextStyle title = TextStyle(
+    fontSize: 30,
+    fontWeight: FontWeight.w800,
+    height: 1.15,
+    letterSpacing: -0.5,
+    color: ink,
+  );
 
-  static List<BoxShadow> buttonShadow(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    return [
-      BoxShadow(
-        color: purpleStart.withValues(alpha: dark ? 0.35 : 0.30),
-        blurRadius: 20,
-        offset: const Offset(0, 10),
-      ),
-    ];
-  }
+  static const TextStyle subtitle = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    height: 1.3,
+    color: bodyGray,
+  );
 
-  // Typography (Title 34 Bold, Subtitle 16 Medium, Label 14 Medium,
-  // Input 16, Button 18 SemiBold).
-  static TextStyle title(BuildContext context) => TextStyle(
-        fontSize: 34,
-        fontWeight: FontWeight.w700,
-        height: 1.1,
-        color: Theme.of(context).colorScheme.onSurface,
-      );
+  static const TextStyle label = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: labelInk,
+  );
 
-  static TextStyle subtitle(BuildContext context) => TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-      );
-
-  static TextStyle label(BuildContext context) => TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: Theme.of(context).colorScheme.onSurface,
-      );
-
-  static const TextStyle input = TextStyle(fontSize: 16);
+  static const TextStyle input = TextStyle(fontSize: 16, color: ink);
 
   static const TextStyle button = TextStyle(
-    fontSize: 18,
-    fontWeight: FontWeight.w600,
+    fontSize: 17,
+    fontWeight: FontWeight.w700,
     color: Colors.white,
+  );
+
+  static const TextStyle link = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w700,
+    color: accent,
+  );
+
+  static const TextStyle muted = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    color: bodyGray,
   );
 }
 
