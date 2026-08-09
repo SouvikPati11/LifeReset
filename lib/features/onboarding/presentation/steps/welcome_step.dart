@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_sizes.dart';
 import '../widgets/onboarding_style.dart';
+import '../widgets/welcome_hero_painter.dart';
 
 /// Screen 1 — Welcome.
 ///
-/// "Welcome to LifeReset" heading, the meditating-sunrise hero (shared with the
-/// login screen), a translucent feature card, and the purple "Start Your
+/// "Welcome to LifeReset" heading, the centred meditating-sunrise hero, a
+/// translucent feature card over its lower portion, and the purple "Start Your
 /// Journey" call-to-action.
 class WelcomeStep extends StatelessWidget {
   const WelcomeStep({super.key, required this.onGetStarted});
@@ -52,22 +53,11 @@ class WelcomeStep extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSizes.md),
-        Expanded(
+        const Expanded(
           child: Stack(
             children: [
-              Positioned.fill(
-                child: Image.asset(
-                  'assets/auth/hero_login.webp',
-                  fit: BoxFit.cover,
-                  alignment: Alignment.center,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const DecoratedBox(
-                    decoration:
-                        BoxDecoration(gradient: OnboardingStyle.pageGradient),
-                  ),
-                ),
-              ),
-              const Align(
+              Positioned.fill(child: WelcomeHero()),
+              Align(
                 alignment: Alignment.bottomCenter,
                 child: Padding(
                   padding: EdgeInsets.all(AppSizes.md),
