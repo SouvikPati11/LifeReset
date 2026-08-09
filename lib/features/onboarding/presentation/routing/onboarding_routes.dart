@@ -39,23 +39,29 @@ class OnboardingAwareRedirect {
     final onOnboarding = location.startsWith(AppRoutes.onboarding);
 
     final user = _ref.read(authStateChangesProvider).valueOrNull;
-    final profile = _ref.read(userProfileProvider).valueOrNull;
+    final profileState = _ref.read(userProfileProvider);
     final onboardingState = _ref.read(onboardingStatusProvider);
 
-    // Only verified, non-admin users with a loaded profile are gated.
-    final isGateable = user != null &&
-        user.isEmailVerified &&
-        profile != null &&
-        !profile.isAdmin;
+    final isAdmin = profileState.valueOrNull?.isAdmin ?? false;
+
+    // Gate every verified, non-admin user — whether or not the profile document
+    // object has loaded yet. The onboarding decision comes from the
+    // `onboardingCompleted` flag (reliably `false` for a new user), NOT from
+    // the presence of the profile object: a brand-new user's `users/{uid}` doc
+    // may not exist at this instant, which previously made the gate fall
+    // through to the auth guard and leak the user straight to Home.
+    final isGateable = user != null && user.isEmailVerified && !isAdmin;
 
     if (!isGateable) {
       // Not our concern — defer entirely to the auth guard.
       return authRedirect;
     }
 
-    // Wait for the onboarding flag before deciding, holding on the splash
-    // screen to avoid a flash of the wrong screen.
-    if (onboardingState.isLoading && !onboardingState.hasValue) {
+    // Hold on the splash screen until BOTH the profile (needed for the admin
+    // check) and the onboarding flag resolve, so we never leak the user to Home
+    // while the profile doc is still absent/loading, and never briefly treat a
+    // still-loading admin as a non-admin.
+    if (!profileState.hasValue || !onboardingState.hasValue) {
       final atSplash = location == AppRoutes.splash;
       return (onOnboarding || atSplash) ? null : AppRoutes.splash;
     }
