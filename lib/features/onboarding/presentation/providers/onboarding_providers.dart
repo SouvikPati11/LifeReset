@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../authentication/presentation/providers/auth_providers.dart';
+import '../../data/datasources/onboarding_draft_local_data_source.dart';
 import '../../data/datasources/onboarding_remote_data_source.dart';
 import '../../data/repositories/onboarding_repository_impl.dart';
 import '../../domain/repositories/onboarding_repository.dart';
@@ -13,6 +14,12 @@ import '../../domain/usecases/watch_onboarding_status.dart';
 final onboardingRemoteDataSourceProvider =
     Provider<OnboardingRemoteDataSource>((ref) {
   return FirestoreOnboardingRemoteDataSource(FirebaseFirestore.instance);
+});
+
+/// Local store for the in-progress onboarding draft (survives app restarts).
+final onboardingDraftLocalDataSourceProvider =
+    Provider<OnboardingDraftLocalDataSource>((ref) {
+  return const OnboardingDraftLocalDataSource();
 });
 
 final onboardingRepositoryProvider = Provider<OnboardingRepository>((ref) {
