@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/exceptions.dart';
+import '../../../../core/utils/app_logger.dart';
 import '../../domain/entities/onboarding_answers.dart';
 import '../models/onboarding_answers_model.dart';
 
@@ -49,7 +50,16 @@ class FirestoreOnboardingRemoteDataSource
         'answers': model.toAnswersMap(),
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
-    } on FirebaseException catch (e) {
+    } on FirebaseException catch (e, st) {
+      // Surface the exact cause (code + Firestore path + operation) so a denied
+      // write is diagnosable rather than a generic "could not save".
+      AppLogger.error(
+        'Onboarding completion write failed '
+        '[op=set(merge), path=${AppConstants.usersCollection}/$uid, '
+        'code=${e.code}]: ${e.message}',
+        e,
+        st,
+      );
       throw ServerException(
         e.message ?? 'Failed to save onboarding.',
         code: e.code,

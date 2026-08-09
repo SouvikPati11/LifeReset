@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/errors/failures.dart';
 import '../controllers/onboarding_controller.dart';
 import '../widgets/onboarding_style.dart';
 
@@ -24,11 +25,16 @@ class SubscriptionStep extends ConsumerWidget {
   Future<void> _startTrial(BuildContext context, WidgetRef ref) async {
     final ok = await ref.read(onboardingControllerProvider.notifier).complete();
     if (!ok && context.mounted) {
+      // Report the actual failure reason (e.g. permission denied, no network)
+      // rather than a blanket "try again", so a real problem is visible.
+      final failure = ref
+          .read(onboardingControllerProvider)
+          .submission
+          .whenOrNull(error: (e, _) => e is Failure ? e : null);
+      final message = failure?.message ?? 'Could not start your trial. Try again.';
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(content: Text('Could not start your trial. Try again.')),
-        );
+        ..showSnackBar(SnackBar(content: Text(message)));
     }
     // On success the router redirects into the app automatically.
   }

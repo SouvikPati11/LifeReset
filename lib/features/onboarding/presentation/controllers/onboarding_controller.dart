@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/utils/result.dart';
 import '../../../authentication/presentation/providers/auth_providers.dart';
+import '../../../authentication/presentation/providers/user_providers.dart';
 import '../../data/datasources/onboarding_draft_local_data_source.dart';
 import '../../domain/entities/onboarding_answers.dart';
 import '../providers/onboarding_providers.dart';
@@ -198,27 +200,46 @@ class OnboardingController extends AutoDisposeNotifier<OnboardingState> {
   /// Persists all answers and marks onboarding complete. Returns `true` on
   /// success. On failure the error is surfaced through [OnboardingState.submission].
   Future<bool> complete() async {
-    final uid = ref.read(currentUserProvider)?.id;
-    if (uid == null || !state.hasAllAnswers) return false;
+    final user = ref.read(currentUserProvider);
+    if (user == null || !state.hasAllAnswers) return false;
 
     // Captured before the await so nothing touches `ref` after a successful
     // completion disposes this notifier via the router redirect.
     final draftStore = ref.read(onboardingDraftLocalDataSourceProvider);
+    final ensureProfile = ref.read(ensureUserProfileProvider);
     final completeUseCase = ref.read(completeOnboardingProvider);
 
     state = state.copyWith(submission: const AsyncLoading());
+
+    // Guarantee the `users/{uid}` document exists BEFORE the completion write.
+    // The completion write merges onboarding fields; on an account that has no
+    // profile document yet (e.g. `ensureProfile` failed silently at login) that
+    // merge is a document *create*, which the Firestore rules reject because it
+    // carries no `role`/`subscription`. Creating the profile first turns the
+    // completion write into a valid *update* on an existing doc. If this step
+    // itself fails, surface it instead of attempting a write that cannot succeed.
+    final ensured = await ensureProfile.call(user);
+    if (ensured is FailureResult<void>) {
+      if (_active) {
+        state = state.copyWith(
+          submission: AsyncError(ensured.failure, StackTrace.current),
+        );
+      }
+      return false;
+    }
+
     final answers = OnboardingAnswers(
       problem: state.problem,
       breakupTiming: state.breakupTiming!,
       hurtMost: state.hurtMost!,
       goal: state.goal!,
     );
-    final result = await completeUseCase.call(uid: uid, answers: answers);
+    final result = await completeUseCase.call(uid: user.id, answers: answers);
 
     return result.when(
       success: (_) {
         // The local draft is no longer needed once answers are persisted.
-        draftStore.clear(uid);
+        draftStore.clear(user.id);
         // The redirect into the app may already have disposed this notifier;
         // only write state while still mounted.
         if (_active) {
