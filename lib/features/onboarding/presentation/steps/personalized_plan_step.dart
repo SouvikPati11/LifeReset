@@ -14,16 +14,21 @@ class PersonalizedPlanStep extends ConsumerWidget {
 
   final VoidCallback onContinue;
 
-  static const List<(IconData, String)> _priorities = [
-    (Icons.spa_rounded, 'Let go of painful memories'),
-    (Icons.healing_rounded, 'Heal your emotional pain'),
-    (Icons.self_improvement_rounded, 'Build self love and confidence'),
-    (Icons.wb_sunny_rounded, 'Create a positive future'),
+  // One icon per priority dimension (pain, goal, focus, stage); the text for
+  // each row is derived from the user's answers.
+  static const List<IconData> _icons = [
+    Icons.spa_rounded,
+    Icons.healing_rounded,
+    Icons.self_improvement_rounded,
+    Icons.wb_sunny_rounded,
   ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final score = ref.read(onboardingControllerProvider.notifier).recoveryScore;
+    final controller = ref.read(onboardingControllerProvider.notifier);
+    final score = controller.recoveryScore;
+    final caption = controller.recoveryCaption;
+    final priorities = controller.topPriorities;
 
     return Column(
       children: [
@@ -72,7 +77,7 @@ class PersonalizedPlanStep extends ConsumerWidget {
                   style: OnboardingStyle.subtitle,
                 ),
                 const SizedBox(height: AppSizes.lg),
-                _ScoreCard(score: score),
+                _ScoreCard(score: score, caption: caption),
                 const SizedBox(height: AppSizes.lg),
                 const Text(
                   'Your Top Priorities',
@@ -83,8 +88,8 @@ class PersonalizedPlanStep extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: AppSizes.sm),
-                for (final (icon, label) in _priorities)
-                  _PriorityRow(icon: icon, label: label),
+                for (var i = 0; i < priorities.length; i++)
+                  _PriorityRow(icon: _icons[i], label: priorities[i]),
               ],
             ),
           ),
@@ -104,9 +109,10 @@ class PersonalizedPlanStep extends ConsumerWidget {
 }
 
 class _ScoreCard extends StatelessWidget {
-  const _ScoreCard({required this.score});
+  const _ScoreCard({required this.score, required this.caption});
 
   final int score;
+  final String caption;
 
   @override
   Widget build(BuildContext context) {
@@ -145,7 +151,7 @@ class _ScoreCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSizes.xs),
                 Text(
-                  'Good Start! Keep going 💜',
+                  caption,
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.white.withValues(alpha: 0.85),

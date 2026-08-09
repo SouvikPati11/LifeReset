@@ -119,26 +119,81 @@ class OnboardingController extends AutoDisposeNotifier<OnboardingState> {
     _saveDraft();
   }
 
-  /// A deterministic "recovery score" derived from the answers. This stands in
-  /// for the (not-yet-built) AI analysis so the plan screen shows a stable,
-  /// personalized-looking number.
+  /// A deterministic "recovery score" derived from all four answers. This
+  /// stands in for the (not-yet-built) AI analysis so the plan screen shows a
+  /// stable, personalized number: base 40 plus small contributions from the
+  /// recovery stage (Q1), goal (Q3), current pain (Q2) and focus area (problem).
   int get recoveryScore {
-    final timingBonus = switch (state.breakupTiming) {
-      BreakupTiming.lessThan1Month => 4,
-      BreakupTiming.oneToThreeMonths => 9,
-      BreakupTiming.threeToSixMonths => 15,
-      BreakupTiming.moreThanSixMonths => 20,
+    final timing = switch (state.breakupTiming) {
+      BreakupTiming.lessThan1Month => 6,
+      BreakupTiming.oneToThreeMonths => 12,
+      BreakupTiming.threeToSixMonths => 18,
+      BreakupTiming.moreThanSixMonths => 24,
       null => 0,
     };
-    final goalBonus = switch (state.goal) {
-      OnboardingGoal.moveOn => 18,
-      OnboardingGoal.healFeelBetter => 16,
-      OnboardingGoal.buildBetterMe => 14,
+    final goal = switch (state.goal) {
+      OnboardingGoal.moveOn => 14,
+      OnboardingGoal.healFeelBetter => 13,
+      OnboardingGoal.buildBetterMe => 12,
       OnboardingGoal.getExBack => 8,
       null => 0,
     };
-    return (55 + timingBonus + goalBonus).clamp(0, 100);
+    final hurt = switch (state.hurtMost) {
+      HurtMost.missingThem => 10,
+      HurtMost.memories => 9,
+      HurtMost.loneliness => 8,
+      HurtMost.future => 7,
+      null => 0,
+    };
+    final problem = switch (state.problem) {
+      OnboardingProblem.breakupRecovery => 8,
+      OnboardingProblem.anxietyStress => 7,
+      OnboardingProblem.lowConfidence => 7,
+      OnboardingProblem.overthinking => 7,
+    };
+    return (40 + timing + goal + hurt + problem).clamp(0, 100);
   }
+
+  /// Encouraging caption shown under the recovery score, tiered by score.
+  String get recoveryCaption {
+    final s = recoveryScore;
+    if (s < 60) return "Let's begin 💜";
+    if (s < 75) return 'Good Start! Keep going 💜';
+    if (s < 87) return "You're making progress 💜";
+    return "You're on your way 💜";
+  }
+
+  /// The four personalized plan priorities, one per answer dimension, in order:
+  /// current pain (Q2), goal (Q3), focus area (problem), recovery stage (Q1).
+  List<String> get topPriorities => [
+        switch (state.hurtMost) {
+          HurtMost.missingThem => 'Let go of painful attachments',
+          HurtMost.memories => 'Let go of painful memories',
+          HurtMost.loneliness => 'Rebuild connection & self-worth',
+          HurtMost.future => 'Create a positive future outlook',
+          null => 'Let go of painful memories',
+        },
+        switch (state.goal) {
+          OnboardingGoal.moveOn => 'Move forward with closure',
+          OnboardingGoal.healFeelBetter => 'Heal your emotional pain',
+          OnboardingGoal.buildBetterMe => 'Build self-love & confidence',
+          OnboardingGoal.getExBack => 'Find clarity before deciding',
+          null => 'Heal your emotional pain',
+        },
+        switch (state.problem) {
+          OnboardingProblem.breakupRecovery => 'Follow your 30-day recovery plan',
+          OnboardingProblem.anxietyStress => 'Calm anxiety & manage stress',
+          OnboardingProblem.lowConfidence => 'Strengthen self-worth',
+          OnboardingProblem.overthinking => 'Quiet overthinking',
+        },
+        switch (state.breakupTiming) {
+          BreakupTiming.lessThan1Month => 'Stabilize sleep & daily routine',
+          BreakupTiming.oneToThreeMonths => 'Process emotions steadily',
+          BreakupTiming.threeToSixMonths => 'Reinforce healthy habits',
+          BreakupTiming.moreThanSixMonths => 'Grow beyond the breakup',
+          null => 'Reinforce healthy habits',
+        },
+      ];
 
   /// Persists all answers and marks onboarding complete. Returns `true` on
   /// success. On failure the error is surfaced through [OnboardingState.submission].
