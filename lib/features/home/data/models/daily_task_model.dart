@@ -22,6 +22,10 @@ class DailyTaskModel {
       duration: minutes > 0 ? '$minutes min' : '',
       order: (data['order'] as num?)?.toInt() ?? 0,
       iconKey: data['iconKey'] as String?,
+      // Extra admin context surfaced on the Task Details screen.
+      whyThisMatters: (data['aiContext'] as String?)?.trim() ?? '',
+      journalPrompt: (data['journalQuestion'] as String?)?.trim() ?? '',
+      moodGoal: (data['moodGoal'] as String?)?.trim() ?? '',
     );
   }
 
