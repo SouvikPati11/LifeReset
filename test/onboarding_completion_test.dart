@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,6 +14,7 @@ import 'package:lifereset/features/onboarding/domain/entities/onboarding_answers
 import 'package:lifereset/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:lifereset/features/onboarding/presentation/controllers/onboarding_controller.dart';
 import 'package:lifereset/features/onboarding/presentation/providers/onboarding_providers.dart';
+import 'package:lifereset/features/onboarding/presentation/steps/subscription_step.dart';
 
 /// Records the order of calls so we can assert profile creation happens BEFORE
 /// the completion write (the fix for the "stuck on Subscription" bug).
@@ -173,5 +175,35 @@ void main() {
 
     expect(ok, isFalse);
     expect(log, isEmpty);
+  });
+
+  testWidgets('tapping "Skip" drives the same secure completion path',
+      (tester) async {
+    final log = <String>[];
+    final container = _container(
+      log: log,
+      ensureResult: const Success(null),
+      completeResult: const Success(null),
+    );
+    addTearDown(container.dispose);
+
+    // Answer everything so the completion is allowed to run.
+    _answerAll(container.read(onboardingControllerProvider.notifier));
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: Scaffold(body: SubscriptionStep())),
+      ),
+    );
+
+    expect(find.text('Skip'), findsOneWidget);
+    await tester.tap(find.text('Skip'));
+    await tester.pumpAndSettle();
+
+    // Skip must persist completion through ensureProfile + the completion write
+    // (never a local-only flag), same as Start Free Trial. subscription is never
+    // written, so it stays `free`.
+    expect(log, ['ensureProfile', 'completeOnboarding']);
   });
 }

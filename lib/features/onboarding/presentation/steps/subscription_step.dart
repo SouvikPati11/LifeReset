@@ -8,9 +8,18 @@ import '../widgets/onboarding_style.dart';
 
 /// Screen 8 — Subscription / 7-Day Trial.
 ///
-/// UI only: no payment is processed. "Start Free Trial" saves all onboarding
-/// answers to Firestore and marks onboarding complete, after which the router
-/// guard moves the user into the app.
+/// The subscription is OPTIONAL. Both actions finish onboarding through the same
+/// secure completion mechanism ([OnboardingController.complete]) — which marks
+/// `onboardingCompleted` on `users/{uid}` and never touches `subscription`
+/// (so it stays `free`) — after which the router guard moves the user into the
+/// app. No payment is processed here.
+///
+///  • "Start Free Trial" — the primary CTA (kept as-is).
+///  • "Skip" — a subtle top-right action for users who don't want the trial.
+///
+/// The two are distinct affordances but share the completion path: neither ever
+/// fakes a subscription, and neither navigates to Home unless the Firestore
+/// completion write actually succeeds.
 class SubscriptionStep extends ConsumerWidget {
   const SubscriptionStep({super.key});
 
@@ -22,21 +31,32 @@ class SubscriptionStep extends ConsumerWidget {
     'Progress Analytics',
   ];
 
-  Future<void> _startTrial(BuildContext context, WidgetRef ref) async {
+  /// Skip the trial and finish onboarding. Uses the same secure completion write
+  /// as [_startTrial]; `subscription` is left untouched (stays `free`) and Home
+  /// opens only if the write succeeds.
+  Future<void> _skip(BuildContext context, WidgetRef ref) =>
+      _finishOnboarding(context, ref);
+
+  /// Start the free trial and finish onboarding. (No payment is processed; the
+  /// user is only marked as onboarded, not as subscribed.)
+  Future<void> _startTrial(BuildContext context, WidgetRef ref) =>
+      _finishOnboarding(context, ref);
+
+  /// Shared completion runner: persists onboarding completion and, on failure,
+  /// surfaces the ACTUAL reason (e.g. permission denied, no network) instead of
+  /// a blanket message. On success the router redirects into the app.
+  Future<void> _finishOnboarding(BuildContext context, WidgetRef ref) async {
     final ok = await ref.read(onboardingControllerProvider.notifier).complete();
     if (!ok && context.mounted) {
-      // Report the actual failure reason (e.g. permission denied, no network)
-      // rather than a blanket "try again", so a real problem is visible.
       final failure = ref
           .read(onboardingControllerProvider)
           .submission
           .whenOrNull(error: (e, _) => e is Failure ? e : null);
-      final message = failure?.message ?? 'Could not start your trial. Try again.';
+      final message = failure?.message ?? 'Could not continue. Please try again.';
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(message)));
     }
-    // On success the router redirects into the app automatically.
   }
 
   @override
@@ -49,6 +69,31 @@ class SubscriptionStep extends ConsumerWidget {
     // pinned below so they stay on-screen (matching the Figma one-screen layout).
     return Column(
       children: [
+        // Optional-subscription escape hatch: a subtle top-right "Skip" that
+        // finishes onboarding without the trial. Deliberately less prominent
+        // than the primary CTA (text-only) so the Figma layout is preserved.
+        Align(
+          alignment: Alignment.centerRight,
+          child: Padding(
+            padding: const EdgeInsets.only(right: AppSizes.sm, top: AppSizes.xs),
+            child: TextButton(
+              onPressed: isSubmitting ? null : () => _skip(context, ref),
+              style: TextButton.styleFrom(
+                foregroundColor: OnboardingStyle.bodyGray,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSizes.sm,
+                  vertical: AppSizes.xs,
+                ),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                'Skip',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ),
         const Expanded(
           child: SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(
