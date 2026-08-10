@@ -163,7 +163,7 @@ service cloud.firestore {
     match /{path=**}/mood_history/{moodId} {
       allow read: if isAdmin();
     }
-    match /{path=**}/ai_conversations/{document=**} {
+    match /{path=**}/ai_conversations/{conversationId} {
       allow read: if isAdmin();
     }
 
