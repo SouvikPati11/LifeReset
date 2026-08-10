@@ -11,7 +11,12 @@ class CompleteOnboarding {
   Future<Result<void>> call({
     required String uid,
     required OnboardingAnswers answers,
+    required int recoveryScore,
   }) {
-    return _repository.completeOnboarding(uid: uid, answers: answers);
+    return _repository.completeOnboarding(
+      uid: uid,
+      answers: answers,
+      recoveryScore: recoveryScore,
+    );
   }
 }

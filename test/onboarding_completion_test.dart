@@ -44,12 +44,17 @@ class _FakeOnboardingRepository implements OnboardingRepository {
   final Result<void> completeResult;
   final List<String> log;
 
+  /// The recovery score threaded into the last completion write.
+  int? lastRecoveryScore;
+
   @override
   Future<Result<void>> completeOnboarding({
     required String uid,
     required OnboardingAnswers answers,
+    required int recoveryScore,
   }) async {
     log.add('completeOnboarding');
+    lastRecoveryScore = recoveryScore;
     return completeResult;
   }
 
@@ -205,5 +210,35 @@ void main() {
     // (never a local-only flag), same as Start Free Trial. subscription is never
     // written, so it stays `free`.
     expect(log, ['ensureProfile', 'completeOnboarding']);
+  });
+
+  test('persists the onboarding-computed recovery score (starting point)',
+      () async {
+    final log = <String>[];
+    final onboardingRepo = _FakeOnboardingRepository(
+      completeResult: const Success(null),
+      log: log,
+    );
+    const user = AuthUser(id: 'u1', email: 'a@b.com', isEmailVerified: true);
+    final container = ProviderContainer(
+      overrides: [
+        currentUserProvider.overrideWithValue(user),
+        userRepositoryProvider.overrideWithValue(
+          _FakeUserRepository(ensureResult: const Success(null), log: log),
+        ),
+        onboardingRepositoryProvider.overrideWithValue(onboardingRepo),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final controller = container.read(onboardingControllerProvider.notifier);
+    _answerAll(controller);
+
+    final ok = await controller.complete();
+
+    expect(ok, isTrue);
+    // The exact value the plan screen showed is what gets persisted.
+    expect(onboardingRepo.lastRecoveryScore, controller.recoveryScore);
+    expect(onboardingRepo.lastRecoveryScore, greaterThan(0));
   });
 }

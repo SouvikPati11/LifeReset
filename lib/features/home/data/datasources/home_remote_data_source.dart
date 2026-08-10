@@ -14,7 +14,14 @@ import '../models/user_stats_model.dart';
 /// Remote data source for the Home Dashboard (Cloud Firestore).
 abstract interface class HomeRemoteDataSource {
   Stream<UserStats> watchUserStats(String uid);
-  Stream<List<DailyTask>> watchDailyTasks();
+
+  /// Streams the admin-authored tasks for [day] of [programId] from the
+  /// `program_tasks` collection (the same data the Admin Panel manages).
+  Stream<List<DailyTask>> watchDailyTasks({
+    required String programId,
+    required int day,
+  });
+
   Future<DailyQuote> getTodaysQuote();
   Future<RecoveryProgram> getProgram();
   Future<void> setTaskCompleted({
@@ -30,7 +37,7 @@ class FirestoreHomeRemoteDataSource implements HomeRemoteDataSource {
   final FirebaseFirestore _firestore;
 
   static const String _programsCollection = 'programs';
-  static const String _dailyTasksCollection = 'daily_tasks';
+  static const String _programTasksCollection = 'program_tasks';
   static const String _quotesCollection = 'quotes';
 
   DocumentReference<Map<String, dynamic>> _userDoc(String uid) =>
@@ -42,13 +49,18 @@ class FirestoreHomeRemoteDataSource implements HomeRemoteDataSource {
   }
 
   @override
-  Stream<List<DailyTask>> watchDailyTasks() {
+  Stream<List<DailyTask>> watchDailyTasks({
+    required String programId,
+    required int day,
+  }) {
+    // Single-equality query (no composite index needed); the day and active
+    // filters + ordering are applied client-side. This mirrors how the Admin
+    // Panel reads the same collection.
     return _firestore
-        .collection(_dailyTasksCollection)
-        .orderBy('order')
+        .collection(_programTasksCollection)
+        .where('programId', isEqualTo: programId)
         .snapshots()
-        .map((snap) =>
-            snap.docs.map(DailyTaskModel.fromFirestore).toList(growable: false));
+        .map((snap) => DailyTaskModel.fromSnapshot(snap, day));
   }
 
   @override

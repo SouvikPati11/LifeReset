@@ -18,9 +18,14 @@ class OnboardingRepositoryImpl extends BaseRepository
   Future<Result<void>> completeOnboarding({
     required String uid,
     required OnboardingAnswers answers,
+    required int recoveryScore,
   }) {
     return guard<void>(
-      () => _remote.completeOnboarding(uid: uid, answers: answers),
+      () => _remote.completeOnboarding(
+        uid: uid,
+        answers: answers,
+        recoveryScore: recoveryScore,
+      ),
     );
   }
 }

@@ -10,9 +10,11 @@ abstract interface class OnboardingRepository {
   /// Streams whether the user has completed onboarding (`onboardingCompleted`).
   Stream<bool> watchCompleted(String uid);
 
-  /// Saves all answers and marks onboarding complete for [uid].
+  /// Saves all answers and marks onboarding complete for [uid], persisting the
+  /// starting [recoveryScore] so the Home dashboard has a real value to show.
   Future<Result<void>> completeOnboarding({
     required String uid,
     required OnboardingAnswers answers,
+    required int recoveryScore,
   });
 }

@@ -143,7 +143,9 @@ class _Header extends StatelessWidget {
                     ),
                   ],
                 ),
-                maxLines: 1,
+                // Wrap gracefully on narrow screens rather than truncating the
+                // user's name (ellipsis is only a last resort on 2 lines).
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 22,
@@ -718,7 +720,20 @@ class _TodaysPlan extends ConsumerWidget {
             if (tasks.isEmpty) return const _PlanEmptyState();
             final shown = tasks.length > 3 ? tasks.sublist(0, 3) : tasks;
             return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSizes.sm),
+                  child: Text(
+                    'Day ${stats.currentDay} • ${tasks.length} '
+                    '${tasks.length == 1 ? 'task' : 'tasks'}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: HomeStyle.inkSoft,
+                    ),
+                  ),
+                ),
                 for (var i = 0; i < shown.length; i++) ...[
                   if (i != 0) const SizedBox(height: AppSizes.sm),
                   _PlanTaskRow(
@@ -874,7 +889,9 @@ class _CheckDot extends StatelessWidget {
   }
 }
 
-/// Designed empty state for Today's Plan — polished, never a bare "no tasks".
+/// Graceful empty state for Today's Plan when the admin has configured no tasks
+/// for the user's current day. Keeps the Home design language; does NOT imply
+/// an AI generation step.
 class _PlanEmptyState extends StatelessWidget {
   const _PlanEmptyState();
 
@@ -887,42 +904,38 @@ class _PlanEmptyState extends StatelessWidget {
         vertical: AppSizes.xl,
       ),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [HomeStyle.lavenderLight, HomeStyle.successSoft],
-        ),
+        color: HomeStyle.lavenderLight,
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
         border: Border.all(color: HomeStyle.border),
       ),
       child: Column(
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 52,
+            height: 52,
             alignment: Alignment.center,
             decoration: const BoxDecoration(
+              color: HomeStyle.lavender,
               shape: BoxShape.circle,
-              gradient: HomeStyle.scoreGradient,
             ),
-            child: const Icon(Icons.auto_awesome_rounded,
-                color: Colors.white, size: 26),
+            child: const Icon(Icons.event_available_rounded,
+                color: HomeStyle.primary, size: 24),
           ),
           const SizedBox(height: AppSizes.md),
           const Text(
-            'Your plan is being prepared',
+            'No tasks for today yet.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 15.5,
               fontWeight: FontWeight.w700,
               color: HomeStyle.ink,
             ),
           ),
           const SizedBox(height: AppSizes.xs),
           const Text(
-            'Your personalized recovery activities will appear here.',
+            'Check back soon — new recovery activities are added regularly.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13.5, color: HomeStyle.inkSoft, height: 1.35),
+            style: TextStyle(fontSize: 13, color: HomeStyle.inkSoft, height: 1.35),
           ),
         ],
       ),
@@ -936,6 +949,13 @@ class _PlanEmptyState extends StatelessWidget {
 
 class _InsightCard extends ConsumerWidget {
   const _InsightCard();
+
+  /// Never surface a missing/"Unknown" author — fall back to the brand.
+  static String _quoteAuthor(String? author) {
+    final a = (author ?? '').trim();
+    if (a.isEmpty || a.toLowerCase() == 'unknown') return 'LifeReset';
+    return a;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -983,7 +1003,7 @@ class _InsightCard extends ConsumerWidget {
             ),
             const SizedBox(height: AppSizes.sm),
             Text(
-              '— ${quote.author}',
+              '— ${_quoteAuthor(quote.author)}',
               style: const TextStyle(
                 fontSize: 13,
                 color: HomeStyle.inkSoft,

@@ -13,6 +13,7 @@ abstract interface class OnboardingRemoteDataSource {
   Future<void> completeOnboarding({
     required String uid,
     required OnboardingAnswers answers,
+    required int recoveryScore,
   });
 }
 
@@ -41,13 +42,22 @@ class FirestoreOnboardingRemoteDataSource
   Future<void> completeOnboarding({
     required String uid,
     required OnboardingAnswers answers,
+    required int recoveryScore,
   }) async {
     try {
       final model = OnboardingAnswersModel(answers);
+      // The recovery journey starts on day 1 with the onboarding-derived score
+      // as the first history point (its starting point). serverTimestamp() is
+      // not allowed inside an array, so the point uses a client timestamp.
       await _userDoc(uid).set({
         'onboardingCompleted': true,
         'problem': answers.problem.value,
         'answers': model.toAnswersMap(),
+        'recoveryScore': recoveryScore,
+        'currentDay': 1,
+        'scoreHistory': [
+          {'date': Timestamp.now(), 'score': recoveryScore},
+        ],
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     } on FirebaseException catch (e, st) {

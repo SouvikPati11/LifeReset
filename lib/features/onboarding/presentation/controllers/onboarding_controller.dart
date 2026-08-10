@@ -234,7 +234,12 @@ class OnboardingController extends AutoDisposeNotifier<OnboardingState> {
       hurtMost: state.hurtMost!,
       goal: state.goal!,
     );
-    final result = await completeUseCase.call(uid: user.id, answers: answers);
+    // Persist the same score the plan screen shows — the user's starting point.
+    final result = await completeUseCase.call(
+      uid: user.id,
+      answers: answers,
+      recoveryScore: recoveryScore,
+    );
 
     return result.when(
       success: (_) {

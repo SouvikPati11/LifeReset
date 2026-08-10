@@ -63,9 +63,14 @@ final userStatsProvider = StreamProvider<UserStats>((ref) {
   return ref.watch(watchUserStatsUseCaseProvider).call(uid);
 });
 
-/// Today's recovery tasks.
+/// The user's current-day plan: admin-authored tasks for `currentDay` of the
+/// active program. Re-subscribes automatically when the journey day changes.
 final dailyTasksProvider = StreamProvider<List<DailyTask>>((ref) {
-  return ref.watch(watchDailyTasksUseCaseProvider).call();
+  final day = ref.watch(userStatsProvider).valueOrNull?.currentDay ?? 1;
+  return ref.watch(watchDailyTasksUseCaseProvider).call(
+        programId: AppConstants.supportedProgram,
+        day: day,
+      );
 });
 
 /// Today's motivational quote (falls back to a default when unavailable).

@@ -141,15 +141,69 @@ void main() {
     }
   });
 
-  testWidgets('empty plan shows the designed empty state, not raw text',
+  testWidgets('populated plan shows the admin day header "Day N • M tasks"',
+      (t) async {
+    await pumpAt(t, const Size(390, 2400), _harness(_overrides()));
+    expect(find.text('Day 7 • 3 tasks'), findsOneWidget);
+  });
+
+  testWidgets('empty plan shows "No tasks for today yet.", not AI wording',
       (t) async {
     await pumpAt(t, const Size(390, 2400), _harness(_overrides(tasks: const [])));
-    expect(find.text('Your plan is being prepared'), findsOneWidget);
-    expect(
-      find.text('Your personalized recovery activities will appear here.'),
-      findsOneWidget,
+    expect(find.text('No tasks for today yet.'), findsOneWidget);
+    expect(find.text('Your plan is being prepared'), findsNothing);
+  });
+
+  testWidgets('missing/Unknown quote author falls back to LifeReset', (t) async {
+    await pumpAt(
+      t,
+      const Size(390, 2400),
+      _harness([
+        userProfileProvider.overrideWith((ref) => Stream.value(_profile)),
+        userStatsProvider
+            .overrideWith((ref) => Stream.value(_populatedStats())),
+        dailyTasksProvider.overrideWith((ref) => Stream.value(_tasks)),
+        dailyQuoteProvider.overrideWith(
+          (ref) => const DailyQuote(text: 'Keep going.', author: 'Unknown'),
+        ),
+        recoveryProgramProvider
+            .overrideWith((ref) => RecoveryProgram.defaultProgram()),
+        homeFocusProvider.overrideWith(
+          (ref) => Stream.value(HomeFocus.fromProblem('breakup_recovery')),
+        ),
+      ]),
     );
-    expect(find.text('No tasks for today yet.'), findsNothing);
+    expect(find.text('— LifeReset'), findsOneWidget);
+    expect(find.text('— Unknown'), findsNothing);
+  });
+
+  testWidgets('long user name wraps gracefully without overflow', (t) async {
+    await pumpAt(
+      t,
+      const Size(320, 2400),
+      _harness([
+        userProfileProvider.overrideWith(
+          (ref) => Stream.value(const UserProfile(
+            id: 'u1',
+            name: 'Bartholomew Featherstonehaugh',
+            email: 'a@b.com',
+          )),
+        ),
+        userStatsProvider
+            .overrideWith((ref) => Stream.value(_populatedStats())),
+        dailyTasksProvider.overrideWith((ref) => Stream.value(_tasks)),
+        dailyQuoteProvider.overrideWith(
+          (ref) => const DailyQuote(text: 'Keep going.', author: 'LifeReset'),
+        ),
+        recoveryProgramProvider
+            .overrideWith((ref) => RecoveryProgram.defaultProgram()),
+        homeFocusProvider.overrideWith(
+          (ref) => Stream.value(HomeFocus.fromProblem('breakup_recovery')),
+        ),
+      ], size: const Size(320, 2400)),
+    );
+    expect(find.textContaining('Bartholomew'), findsOneWidget);
+    expect(t.takeException(), isNull);
   });
 
   testWidgets('errored stats shows a retry card; other sections still render',

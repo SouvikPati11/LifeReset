@@ -18,7 +18,11 @@ class HomeRepositoryImpl extends BaseRepository implements HomeRepository {
       _remote.watchUserStats(uid);
 
   @override
-  Stream<List<DailyTask>> watchDailyTasks() => _remote.watchDailyTasks();
+  Stream<List<DailyTask>> watchDailyTasks({
+    required String programId,
+    required int day,
+  }) =>
+      _remote.watchDailyTasks(programId: programId, day: day);
 
   @override
   Future<Result<DailyQuote>> getTodaysQuote() {

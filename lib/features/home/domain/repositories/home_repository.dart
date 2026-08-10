@@ -9,8 +9,12 @@ abstract interface class HomeRepository {
   /// Streams the user's recovery stats from `users/{uid}`.
   Stream<UserStats> watchUserStats(String uid);
 
-  /// Streams today's recovery tasks from `daily_tasks`.
-  Stream<List<DailyTask>> watchDailyTasks();
+  /// Streams the admin-authored tasks for [day] of [programId] (from
+  /// `program_tasks`) — the user's current-day plan.
+  Stream<List<DailyTask>> watchDailyTasks({
+    required String programId,
+    required int day,
+  });
 
   /// Reads today's motivational quote (falls back to a default when absent).
   Future<Result<DailyQuote>> getTodaysQuote();
