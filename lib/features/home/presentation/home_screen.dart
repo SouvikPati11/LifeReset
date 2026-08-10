@@ -6,6 +6,7 @@ import '../../journal/presentation/screens/journal_home_screen.dart';
 import '../../profile/presentation/screens/profile_home_screen.dart';
 import 'screens/todays_plan_screen.dart';
 import 'views/home_dashboard_view.dart';
+import 'widgets/home_style.dart';
 
 /// The user app shell: a Material 3 bottom-navigation host.
 ///
@@ -62,11 +63,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ProfileHomeScreen(),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (value) => setState(() => _index = value),
-        destinations: _destinations,
+      bottomNavigationBar: _wellnessNav(
+        child: NavigationBar(
+          selectedIndex: _index,
+          onDestinationSelected: (value) => setState(() => _index = value),
+          destinations: _destinations,
+        ),
       ),
+    );
+  }
+
+  /// Applies the calm wellness palette (purple active state on a light surface)
+  /// to the shared bottom navigation without touching the global app theme.
+  Widget _wellnessNav({required Widget child}) {
+    return NavigationBarTheme(
+      data: NavigationBarThemeData(
+        backgroundColor: HomeStyle.card,
+        indicatorColor: HomeStyle.lavender,
+        surfaceTintColor: Colors.transparent,
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            color: states.contains(WidgetState.selected)
+                ? HomeStyle.primary
+                : HomeStyle.inkSoft,
+          ),
+        ),
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: states.contains(WidgetState.selected)
+                ? HomeStyle.primary
+                : HomeStyle.inkSoft,
+          ),
+        ),
+      ),
+      child: child,
     );
   }
 }

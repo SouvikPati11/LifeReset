@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../authentication/presentation/providers/auth_providers.dart';
 import '../../data/datasources/home_remote_data_source.dart';
+import '../widgets/home_style.dart';
 import '../../data/repositories/home_repository_impl.dart';
 import '../../domain/entities/daily_quote.dart';
 import '../../domain/entities/daily_task.dart';
@@ -79,4 +81,17 @@ final recoveryProgramProvider = FutureProvider<RecoveryProgram>((ref) async {
     success: (program) => program,
     failure: (_) => RecoveryProgram.defaultProgram(),
   );
+});
+
+/// The user's personalized Focus, derived from `users/{uid}.problem` (saved at
+/// onboarding). Uses the real stored value; falls back to a generic focus when
+/// signed out or the field is absent — never a raw enum string.
+final homeFocusProvider = StreamProvider<HomeFocus>((ref) {
+  final uid = ref.watch(currentUserProvider)?.id;
+  if (uid == null) return Stream.value(HomeFocus.fromProblem(null));
+  return FirebaseFirestore.instance
+      .collection(AppConstants.usersCollection)
+      .doc(uid)
+      .snapshots()
+      .map((doc) => HomeFocus.fromProblem(doc.data()?['problem'] as String?));
 });

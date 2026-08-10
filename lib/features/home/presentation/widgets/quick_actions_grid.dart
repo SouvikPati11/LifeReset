@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import 'home_style.dart';
 
-/// The four Quick Action cards. Navigation only — the target modules are not
-/// built yet, so tapping opens a placeholder via [onOpen].
+/// The four Quick Action cards laid out as a 2 × 2 grid. Navigation only —
+/// tapping calls [onOpen] with the action's title, which the dashboard routes
+/// to the matching module screen.
 class QuickActionsGrid extends StatelessWidget {
   const QuickActionsGrid({super.key, required this.onOpen});
 
@@ -11,37 +13,58 @@ class QuickActionsGrid extends StatelessWidget {
   final ValueChanged<String> onOpen;
 
   static const List<_QuickAction> _actions = [
-    _QuickAction('Journal', 'Write your thoughts', Icons.menu_book_rounded),
-    _QuickAction('Mood', 'Track how you feel', Icons.favorite_rounded),
-    _QuickAction('Progress', 'See your journey', Icons.trending_up_rounded),
-    _QuickAction('AI Coach', 'Get support 24/7', Icons.forum_rounded),
+    _QuickAction('Journal', 'Write your thoughts', Icons.menu_book_rounded,
+        Color(0xFF7C3AED)),
+    _QuickAction('Mood', 'Track how you feel', Icons.sentiment_satisfied_rounded,
+        Color(0xFFF59E0B)),
+    _QuickAction('Progress', 'See your journey', Icons.trending_up_rounded,
+        Color(0xFF10B981)),
+    _QuickAction('AI Coach', 'Get support 24/7', Icons.auto_awesome_rounded,
+        Color(0xFF7C3AED)),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Column(
       children: [
-        for (var i = 0; i < _actions.length; i++) ...[
-          if (i != 0) const SizedBox(width: AppSizes.sm),
-          Expanded(
-            child: _QuickActionCard(
-              action: _actions[i],
-              onTap: () => onOpen(_actions[i].title),
-            ),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: _card(0)),
+              const SizedBox(width: AppSizes.md),
+              Expanded(child: _card(1)),
+            ],
           ),
-        ],
+        ),
+        const SizedBox(height: AppSizes.md),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: _card(2)),
+              const SizedBox(width: AppSizes.md),
+              Expanded(child: _card(3)),
+            ],
+          ),
+        ),
       ],
     );
   }
+
+  Widget _card(int i) => _QuickActionCard(
+        action: _actions[i],
+        onTap: () => onOpen(_actions[i].title),
+      );
 }
 
 class _QuickAction {
-  const _QuickAction(this.title, this.subtitle, this.icon);
+  const _QuickAction(this.title, this.subtitle, this.icon, this.tint);
 
   final String title;
   final String subtitle;
   final IconData icon;
+  final Color tint;
 }
 
 class _QuickActionCard extends StatelessWidget {
@@ -52,51 +75,59 @@ class _QuickActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     return Material(
-      color: colorScheme.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+      color: HomeStyle.card,
+      borderRadius: BorderRadius.circular(AppSizes.radiusLg),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
         child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.xs,
-            vertical: AppSizes.md,
-          ),
+          padding: const EdgeInsets.all(AppSizes.md),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-            border: Border.all(color: colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+            border: Border.all(color: HomeStyle.border),
+            boxShadow: HomeStyle.softShadow,
           ),
-          child: Column(
+          child: Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 44,
+                height: 44,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withValues(alpha: 0.5),
+                  color: action.tint.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(action.icon, size: 20, color: colorScheme.primary),
+                child: Icon(action.icon, size: 22, color: action.tint),
               ),
-              const SizedBox(height: AppSizes.sm),
-              Text(
-                action.title,
-                textAlign: TextAlign.center,
-                style: textTheme.labelMedium,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                action.subtitle,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  fontSize: 10,
+              const SizedBox(width: AppSizes.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      action.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        color: HomeStyle.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      action.subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: HomeStyle.inkSoft,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
