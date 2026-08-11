@@ -2,189 +2,335 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
-import '../../domain/entities/journal_analytics.dart';
+import '../../../home/presentation/providers/home_providers.dart';
+import '../../../home/presentation/widgets/charts.dart';
+import '../../../home/presentation/widgets/home_style.dart';
+import '../../domain/entities/mood_entry.dart';
 import '../providers/journal_providers.dart';
-import '../screens/prompts_screen.dart';
-import '../widgets/journal_widgets.dart';
 
-/// Insights tab: healing progress, derived insights, prompts and a daily
-/// reflection checklist.
+/// Insights = **analytics**. A headline insight, then a dominant trend chart as
+/// the centrepiece, a compact row of metric tiles, and an encouragement footer —
+/// a chart-led composition distinct from the dashboard/diary/tracker screens.
 class InsightsTab extends ConsumerWidget {
   const InsightsTab({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-    final currentDay = ref.watch(currentDayProvider);
-    final analytics = ref.watch(moodAnalyticsProvider);
     final stats = ref.watch(journalStatsProvider);
-    final recent = ref.watch(recentEntriesProvider).valueOrNull ?? const [];
-    final moodToday = ref.watch(todayMoodProvider).valueOrNull != null;
-    final now = DateTime.now();
-    final journalToday = recent.any((e) =>
-        e.createdAt.year == now.year &&
-        e.createdAt.month == now.month &&
-        e.createdAt.day == now.day);
+    final analytics = ref.watch(moodAnalyticsProvider);
+    final history = ref.watch(moodHistoryProvider).valueOrNull ?? const [];
+    final userStats = ref.watch(userStatsProvider).valueOrNull;
+    final tasks = ref.watch(dailyTasksProvider).valueOrNull ?? const [];
 
-    const totalDays = 30;
-    final percent = (currentDay / totalDays).clamp(0.0, 1.0);
+    final score = userStats?.recoveryScore ?? 0;
+    final completedIds = userStats?.completedTaskIds ?? const <String>{};
+    final doneToday = tasks.where((t) => completedIds.contains(t.id)).length;
+    final taskPct = tasks.isEmpty ? null : (doneToday / tasks.length * 100).round();
+    final moodDelta = _moodDeltaPercent(history);
 
     return ListView(
-      padding: const EdgeInsets.all(AppSizes.md),
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.sm,
+        AppSizes.lg,
+        AppSizes.xl,
+      ),
       children: [
-        _JourneyCard(currentDay: currentDay, totalDays: totalDays, percent: percent),
-        const SizedBox(height: AppSizes.md),
-        Row(
-          children: [
-            Expanded(
-              child: StatCard(
-                value: '${stats.totalEntries}',
-                label: 'Journal Entries',
-              ),
-            ),
-            const SizedBox(width: AppSizes.md),
-            Expanded(
-              child: StatCard(
-                value: '${analytics.totalTracked}',
-                label: 'Mood Tracked',
-              ),
-            ),
-            const SizedBox(width: AppSizes.md),
-            Expanded(
-              child: StatCard(
-                value: '${analytics.streak}',
-                label: 'Day Streak',
-                valueColor: colorScheme.tertiary,
-              ),
-            ),
-          ],
+        _RecoveryInsight(
+          moodDelta: moodDelta,
+          entriesThisWeek: stats.entriesThisWeek,
+          streak: analytics.streak,
         ),
         const SizedBox(height: AppSizes.lg),
-        Text('Top Insights', style: textTheme.titleMedium),
-        const SizedBox(height: AppSizes.sm),
-        JCard(
-          child: Column(
-            children: [
-              for (final line in _insights(stats, analytics))
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
-                  child: Row(
-                    children: [
-                      Icon(Icons.insights_rounded,
-                          size: AppSizes.iconSm, color: colorScheme.primary),
-                      const SizedBox(width: AppSizes.sm),
-                      Expanded(child: Text(line, style: textTheme.bodyMedium)),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ),
+        _MoodTrendChartCard(history: history, delta: moodDelta),
         const SizedBox(height: AppSizes.md),
-        JCard(
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const PromptsScreen()),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.lightbulb_outline_rounded, color: colorScheme.primary),
-              const SizedBox(width: AppSizes.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Need inspiration?', style: textTheme.titleSmall),
-                    Text(
-                      'Browse writing prompts to get started.',
-                      style: textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right_rounded),
-            ],
-          ),
+        _MetricsRow(
+          entriesThisWeek: stats.entriesThisWeek,
+          taskPct: taskPct,
+          score: score,
         ),
         const SizedBox(height: AppSizes.lg),
-        _DailyReflection(journalToday: journalToday, moodToday: moodToday),
+        const _Encouragement(),
       ],
     );
   }
 
-  List<String> _insights(JournalStats stats, MoodAnalytics analytics) {
-    final list = <String>[
-      'You have written ${stats.totalEntries} journal entries so far.',
-    ];
-    if (analytics.averageScore > 0) {
-      list.add(
-          'Your average mood is ${analytics.averageScore.toStringAsFixed(1)}/10.');
+  int? _moodDeltaPercent(List<MoodEntry> history) {
+    final now = DateTime.now();
+    double avg(Iterable<MoodEntry> xs) {
+      final l = xs.toList();
+      if (l.isEmpty) return 0;
+      return l.map((e) => e.mood.score).reduce((a, b) => a + b) / l.length;
     }
-    if (analytics.streak > 0) {
-      list.add('You are on a ${analytics.streak}-day mood-tracking streak.');
-    }
-    return list;
+
+    final thisWeek =
+        history.where((e) => e.date.isAfter(now.subtract(const Duration(days: 7))));
+    final prevWeek = history.where((e) =>
+        e.date.isAfter(now.subtract(const Duration(days: 14))) &&
+        e.date.isBefore(now.subtract(const Duration(days: 7))));
+    final a = avg(thisWeek);
+    final b = avg(prevWeek);
+    if (a > 0 && b > 0) return ((a - b) / b * 100).round();
+    return null;
   }
 }
 
-class _JourneyCard extends StatelessWidget {
-  const _JourneyCard({
-    required this.currentDay,
-    required this.totalDays,
-    required this.percent,
+class _RecoveryInsight extends StatelessWidget {
+  const _RecoveryInsight({
+    required this.moodDelta,
+    required this.entriesThisWeek,
+    required this.streak,
   });
 
-  final int currentDay;
-  final int totalDays;
-  final double percent;
+  final int? moodDelta;
+  final int entriesThisWeek;
+  final int streak;
+
+  (String, String) get _content {
+    if (moodDelta != null && moodDelta! > 0) {
+      return (
+        "You're making great progress! 🎉",
+        'Your mood has improved by $moodDelta% this week and you\'ve been '
+            'more consistent.',
+      );
+    }
+    if (streak >= 3) {
+      return (
+        "You're building a strong habit 💪",
+        "You're on a $streak-day tracking streak. Consistency is how healing "
+            'sticks.',
+      );
+    }
+    if (entriesThisWeek > 0) {
+      return (
+        'Keep showing up for yourself 💜',
+        "You've journaled $entriesThisWeek "
+            "${entriesThisWeek == 1 ? 'time' : 'times'} this week. Small steps "
+            'add up.',
+      );
+    }
+    if (moodDelta != null && moodDelta! < 0) {
+      return (
+        'Be gentle with yourself 💜',
+        "This week was tougher — recovery isn't linear. Tomorrow is a fresh "
+            'start.',
+      );
+    }
+    return (
+      'Your journey starts here 🌱',
+      'Track your mood and journal to unlock personalized insights.',
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final end = Color.lerp(colorScheme.primary, Colors.black, 0.35)!;
+    final (title, body) = _content;
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(AppSizes.lg),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [colorScheme.primary, end]),
+        gradient: HomeStyle.scoreGradient,
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        boxShadow: HomeStyle.softShadow,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.auto_awesome_rounded,
+                        color: Colors.white, size: 16),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        'RECOVERY INSIGHT',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSizes.sm),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  body,
+                  style: const TextStyle(
+                      color: Colors.white, fontSize: 13.5, height: 1.4),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSizes.md),
+          Container(
+            width: 46,
+            height: 46,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.18),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.trending_up_rounded,
+                color: Colors.white, size: 24),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The analytical centrepiece: a wide mood-trend line chart.
+class _MoodTrendChartCard extends StatelessWidget {
+  const _MoodTrendChartCard({required this.history, required this.delta});
+
+  final List<MoodEntry> history;
+  final int? delta;
+
+  @override
+  Widget build(BuildContext context) {
+    final sorted = [...history]..sort((a, b) => a.date.compareTo(b.date));
+    final enough = sorted.length >= 2;
+    final label = delta == null
+        ? 'Tracking'
+        : (delta! > 0 ? 'Improving' : (delta! < 0 ? 'Dipping' : 'Steady'));
+    final color = delta != null && delta! < 0
+        ? const Color(0xFFF97316)
+        : const Color(0xFF10B981);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSizes.lg),
+      decoration: BoxDecoration(
+        color: HomeStyle.card,
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        border: Border.all(color: HomeStyle.border),
+        boxShadow: HomeStyle.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('30-Day Journey',
-              style: textTheme.titleMedium?.copyWith(color: Colors.white)),
-          const SizedBox(height: AppSizes.sm),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('$currentDay',
-                  style: textTheme.displaySmall?.copyWith(
-                    color: Colors.white,
+              const Icon(Icons.show_chart_rounded,
+                  size: 18, color: HomeStyle.primary),
+              const SizedBox(width: 6),
+              const Expanded(
+                child: Text(
+                  'Mood Trend',
+                  style: TextStyle(
+                    fontSize: 16,
                     fontWeight: FontWeight.w700,
-                  )),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6, left: 4),
-                child: Text('of $totalDays days',
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
-                    )),
+                    color: HomeStyle.ink,
+                  ),
+                ),
               ),
-              const Spacer(),
-              Text('${(percent * 100).round()}% Complete',
-                  style: textTheme.titleMedium?.copyWith(color: Colors.white)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusPill),
+                ),
+                child: Text(
+                  delta == null
+                      ? label
+                      : '$label · ${delta! >= 0 ? '+' : ''}$delta%',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Color.lerp(color, Colors.black, 0.25),
+                  ),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: AppSizes.sm),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppSizes.radiusPill),
-            child: LinearProgressIndicator(
-              value: percent,
-              minHeight: 6,
-              backgroundColor: Colors.white.withValues(alpha: 0.25),
-              valueColor: const AlwaysStoppedAnimation(Colors.white),
+          const SizedBox(height: AppSizes.md),
+          if (enough)
+            SizedBox(
+              height: 110,
+              child: RecoveryLineChart(
+                values: sorted.map((e) => e.mood.score).toList(),
+                lineColor: color,
+                height: 110,
+              ),
+            )
+          else
+            const SizedBox(
+              height: 110,
+              child: Center(
+                child: Text(
+                  'Track your mood a few days to see your trend.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, color: HomeStyle.inkSoft),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A compact horizontal row of three small metric tiles.
+class _MetricsRow extends StatelessWidget {
+  const _MetricsRow({
+    required this.entriesThisWeek,
+    required this.taskPct,
+    required this.score,
+  });
+
+  final int entriesThisWeek;
+  final int? taskPct;
+  final int score;
+
+  @override
+  Widget build(BuildContext context) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _Tile(
+              icon: Icons.menu_book_rounded,
+              value: '$entriesThisWeek',
+              label: 'Journaled\nthis week',
+              accent: HomeStyle.primary,
+            ),
+          ),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: _Tile(
+              icon: Icons.check_circle_rounded,
+              value: taskPct == null ? '—' : '$taskPct%',
+              label: 'Tasks done\ntoday',
+              accent: const Color(0xFF10B981),
+              ring: taskPct,
+            ),
+          ),
+          const SizedBox(width: AppSizes.md),
+          Expanded(
+            child: _Tile(
+              icon: Icons.auto_graph_rounded,
+              value: '$score',
+              label: 'Recovery\nscore /100',
+              accent: HomeStyle.primary,
             ),
           ),
         ],
@@ -193,61 +339,112 @@ class _JourneyCard extends StatelessWidget {
   }
 }
 
-class _DailyReflection extends StatelessWidget {
-  const _DailyReflection({required this.journalToday, required this.moodToday});
+class _Tile extends StatelessWidget {
+  const _Tile({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.accent,
+    this.ring,
+  });
 
-  final bool journalToday;
-  final bool moodToday;
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color accent;
+  final int? ring;
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-    final items = <(String, bool)>[
-      ('Write in Journal', journalToday),
-      ('Track your Mood', moodToday),
-      ("Complete Today's Tasks", false),
-      ('Practice Breathing', false),
-      ('Talk to AI Coach', false),
-    ];
-    final done = items.where((i) => i.$2).length;
-
-    return JCard(
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: BoxDecoration(
+        color: HomeStyle.card,
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        border: Border.all(color: HomeStyle.border),
+        boxShadow: HomeStyle.softShadow,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Daily Reflection', style: textTheme.titleMedium),
-          Text('Small steps lead to big changes.',
-              style: textTheme.bodySmall
-                  ?.copyWith(color: colorScheme.onSurfaceVariant)),
-          const SizedBox(height: AppSizes.md),
-          for (final (label, checked) in items)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
-              child: Row(
-                children: [
-                  Icon(
-                    checked
-                        ? Icons.check_circle_rounded
-                        : Icons.circle_outlined,
-                    color: checked ? colorScheme.primary : colorScheme.outline,
-                    size: AppSizes.iconMd,
-                  ),
-                  const SizedBox(width: AppSizes.sm),
-                  Text(
-                    label,
-                    style: textTheme.bodyMedium?.copyWith(
-                      decoration: checked ? TextDecoration.lineThrough : null,
-                      color: checked ? colorScheme.onSurfaceVariant : null,
-                    ),
-                  ),
-                ],
+          if (ring != null)
+            RecoveryScoreRing(
+              score: ring!,
+              maxScore: 100,
+              progressColor: accent,
+              trackColor: HomeStyle.lavender,
+              size: 30,
+              strokeWidth: 4,
+              child: const SizedBox.shrink(),
+            )
+          else
+            Icon(icon, size: 20, color: accent),
+          const SizedBox(height: AppSizes.sm),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: accent,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: HomeStyle.inkSoft,
+              height: 1.25,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Encouragement extends StatelessWidget {
+  const _Encouragement();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSizes.lg),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [HomeStyle.lavenderLight, HomeStyle.lavender],
+        ),
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        border: Border.all(color: HomeStyle.border),
+      ),
+      child: Row(
+        children: [
+          const Expanded(
+            child: Text(
+              'Keep going! Small steps every day lead to big changes.',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: HomeStyle.ink,
+                height: 1.35,
               ),
             ),
-          const SizedBox(height: AppSizes.sm),
-          Text('$done of ${items.length} completed',
-              style: textTheme.labelSmall
-                  ?.copyWith(color: colorScheme.onSurfaceVariant)),
+          ),
+          const SizedBox(width: AppSizes.md),
+          Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.favorite_rounded,
+                color: HomeStyle.primary, size: 22),
+          ),
         ],
       ),
     );

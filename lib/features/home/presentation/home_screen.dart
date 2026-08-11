@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../coach/presentation/screens/coach_home_screen.dart';
-import '../../journal/presentation/screens/journal_home_screen.dart';
 import '../../profile/presentation/screens/profile_home_screen.dart';
 import 'views/home_dashboard_view.dart';
 import 'widgets/home_style.dart';
+import 'widgets/journey_tab_navigator.dart';
 import 'widgets/plan_tab_navigator.dart';
 
 /// The user app shell: a Material 3 bottom-navigation host.
@@ -60,7 +60,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // The Plan tab runs in its own Navigator so opening Task Details
           // keeps the shell's bottom navigation visible (Plan stays selected).
           PlanTabNavigator(),
-          JournalHomeScreen(),
+          // Journey tab runs in its own Navigator so its detail pushes keep the
+          // shell's bottom navigation visible (Journey stays selected).
+          JourneyTabNavigator(),
           CoachHomeScreen(),
           ProfileHomeScreen(),
         ],
