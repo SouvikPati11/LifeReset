@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../home/presentation/widgets/home_style.dart';
 
-/// A rounded surface used across the profile UI.
+/// A rounded white surface used across the profile UI (HomeStyle).
 class PCard extends StatelessWidget {
   const PCard({super.key, required this.child, this.padding, this.onTap});
 
@@ -12,22 +13,26 @@ class PCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final content = Container(
       width: double.infinity,
       padding: padding ?? const EdgeInsets.all(AppSizes.md),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
+        color: HomeStyle.card,
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-        border: Border.all(color: colorScheme.outlineVariant),
+        border: Border.all(color: HomeStyle.border),
+        boxShadow: HomeStyle.softShadow,
       ),
       child: child,
     );
     if (onTap == null) return content;
-    return InkWell(
-      onTap: onTap,
+    return Material(
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-      child: content,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        child: content,
+      ),
     );
   }
 }
@@ -57,8 +62,6 @@ class SettingTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppSizes.radiusMd),
@@ -69,20 +72,37 @@ class SettingTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, size: AppSizes.iconMd,
-                color: iconColor ?? colorScheme.primary),
+            Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: (iconColor ?? HomeStyle.primary).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(icon,
+                  size: 18, color: iconColor ?? HomeStyle.primary),
+            ),
             const SizedBox(width: AppSizes.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: textTheme.bodyLarge?.copyWith(color: titleColor)),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                      color: titleColor ?? HomeStyle.ink,
+                    ),
+                  ),
                   if (subtitle != null)
-                    Text(
-                      subtitle!,
-                      style: textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        subtitle!,
+                        style: const TextStyle(
+                            fontSize: 12.5, color: HomeStyle.inkSoft),
                       ),
                     ),
                 ],
@@ -90,10 +110,10 @@ class SettingTile extends StatelessWidget {
             ),
             if (trailing != null) trailing!,
             if (showChevron && onTap != null)
-              Padding(
-                padding: const EdgeInsets.only(left: AppSizes.sm),
+              const Padding(
+                padding: EdgeInsets.only(left: AppSizes.sm),
                 child: Icon(Icons.chevron_right_rounded,
-                    color: colorScheme.onSurfaceVariant),
+                    color: HomeStyle.inkSoft, size: 20),
               ),
           ],
         ),
@@ -112,7 +132,14 @@ class SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.sm, top: AppSizes.md),
-      child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          color: HomeStyle.ink,
+        ),
+      ),
     );
   }
 }

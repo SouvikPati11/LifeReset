@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
-import '../../../../shared/widgets/loading_view.dart';
+import '../../../../shared/widgets/ls_kit.dart';
+import '../../../home/presentation/widgets/home_style.dart';
+import '../../../notifications/presentation/providers/notifications_providers.dart';
+import '../../../notifications/presentation/screens/notifications_inbox_screen.dart';
 import '../../domain/entities/user_profile.dart';
 import '../providers/profile_providers.dart';
-import '../widgets/profile_widgets.dart';
 import 'edit_profile_screen.dart';
 import 'payment_methods_screen.dart';
 import 'profile_placeholder_screen.dart';
 import 'settings_screen.dart';
 import 'subscription_screen.dart';
 
-/// My Profile: account overview, subscription status and quick actions.
+/// My Profile: a personal, account-focused surface — an identity header, a
+/// compact real-stat strip, subscription status, and grouped settings sections.
 class ProfileHomeScreen extends ConsumerWidget {
   const ProfileHomeScreen({super.key});
 
@@ -23,145 +26,138 @@ class ProfileHomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(profileProvider);
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
+    final unread = ref.watch(unreadCountProvider);
 
     return Scaffold(
+      backgroundColor: HomeStyle.background,
       body: SafeArea(
-        child: profileAsync.when(
-          loading: () => const LoadingView(),
-          error: (_, __) => const Center(child: Text('Could not load profile')),
-          data: (profile) => ListView(
-            padding: const EdgeInsets.all(AppSizes.md),
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+        bottom: false,
+        child: Column(
+          children: [
+            LsHeader(
+              title: 'Profile',
+              subtitle: 'Manage your account and preferences',
+              trailing: LsSquareButton(
+                icon: Icons.notifications_none_rounded,
+                badgeCount: unread,
+                onTap: () =>
+                    _push(context, const NotificationsInboxScreen()),
+              ),
+            ),
+            const SizedBox(height: AppSizes.md),
+            Expanded(
+              child: profileAsync.when(
+                loading: () => const LsLoader(),
+                error: (_, __) => const LsErrorState(
+                  title: 'Could not load profile',
+                  message: 'Please try again in a moment.',
+                ),
+                data: (profile) => ListView(
+                  padding: const EdgeInsets.fromLTRB(
+                      AppSizes.lg, 0, AppSizes.lg, AppSizes.xl),
+                  children: [
+                    _IdentityCard(
+                      profile: profile,
+                      onEdit: () => _push(
+                          context, EditProfileScreen(profile: profile)),
+                    ),
+                    const SizedBox(height: AppSizes.lg),
+                    LsSectionTitle(
+                      'Subscription',
+                      trailing: TextButton(
+                        onPressed: () =>
+                            _push(context, const SubscriptionScreen()),
+                        style: TextButton.styleFrom(
+                          foregroundColor: HomeStyle.primary,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppSizes.sm),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text('View details',
+                            style: TextStyle(
+                                fontSize: 13, fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.md),
+                    _SubscriptionCard(profile: profile),
+                    const SizedBox(height: AppSizes.lg),
+                    const LsGroupLabel('Account'),
+                    LsGroup(
                       children: [
-                        Text('My Profile', style: textTheme.headlineSmall),
-                        Text(
-                          'Manage your account and preferences',
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
+                        LsRow(
+                          icon: Icons.badge_outlined,
+                          title: 'Personal Information',
+                          onTap: () => _push(
+                              context, EditProfileScreen(profile: profile)),
+                        ),
+                        LsRow(
+                          icon: Icons.notifications_outlined,
+                          title: 'Notifications',
+                          onTap: () => _push(
+                              context, const NotificationsInboxScreen()),
+                        ),
+                        LsRow(
+                          icon: Icons.settings_outlined,
+                          title: 'Preferences',
+                          onTap: () =>
+                              _push(context, const SettingsScreen()),
+                        ),
+                        LsRow(
+                          icon: Icons.credit_card_outlined,
+                          title: 'Payment Methods',
+                          onTap: () =>
+                              _push(context, const PaymentMethodsScreen()),
                         ),
                       ],
                     ),
-                  ),
-                  IconButton.filledTonal(
-                    onPressed: () =>
-                        _push(context, const ProfilePlaceholderScreen(title: 'Notifications')),
-                    icon: const Icon(Icons.notifications_none_rounded),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSizes.md),
-              _ProfileCard(
-                profile: profile,
-                onEdit: () => _push(context, EditProfileScreen(profile: profile)),
-              ),
-              const SizedBox(height: AppSizes.lg),
-              Row(
-                children: [
-                  Text('Subscription Status', style: textTheme.titleMedium),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: () => _push(context, const SubscriptionScreen()),
-                    child: const Text('View Details'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSizes.sm),
-              _SubscriptionStatusCard(profile: profile),
-              const SizedBox(height: AppSizes.lg),
-              Text('Quick Actions', style: textTheme.titleMedium),
-              const SizedBox(height: AppSizes.sm),
-              Row(
-                children: [
-                  _QuickAction(
-                    icon: Icons.person_outline_rounded,
-                    label: 'Edit Profile',
-                    onTap: () =>
-                        _push(context, EditProfileScreen(profile: profile)),
-                  ),
-                  _QuickAction(
-                    icon: Icons.settings_outlined,
-                    label: 'Settings',
-                    onTap: () => _push(context, const SettingsScreen()),
-                  ),
-                  _QuickAction(
-                    icon: Icons.headset_mic_outlined,
-                    label: 'Help &\nSupport',
-                    onTap: () => _push(context, const SettingsScreen()),
-                  ),
-                  _QuickAction(
-                    icon: Icons.credit_card_outlined,
-                    label: 'Payment\nMethods',
-                    onTap: () =>
-                        _push(context, const PaymentMethodsScreen()),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSizes.lg),
-              PCard(
-                padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
-                child: Column(
-                  children: [
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(
-                          AppSizes.sm, AppSizes.md, AppSizes.sm, 0),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: SectionHeader('Account'),
-                      ),
-                    ),
-                    SettingTile(
-                      icon: Icons.badge_outlined,
-                      title: 'Personal Information',
-                      onTap: () =>
-                          _push(context, EditProfileScreen(profile: profile)),
-                    ),
-                    SettingTile(
-                      icon: Icons.lock_outline_rounded,
-                      title: 'Change Password',
-                      onTap: () => _push(context,
-                          const ProfilePlaceholderScreen(title: 'Change Password')),
-                    ),
-                    SettingTile(
-                      icon: Icons.notifications_outlined,
-                      title: 'Notification Preferences',
-                      onTap: () => _push(context, const SettingsScreen()),
-                    ),
-                    SettingTile(
-                      icon: Icons.shield_outlined,
-                      title: 'Privacy & Security',
-                      onTap: () => _push(context,
-                          const ProfilePlaceholderScreen(title: 'Privacy & Security')),
+                    const SizedBox(height: AppSizes.lg),
+                    const LsGroupLabel('Support'),
+                    LsGroup(
+                      children: [
+                        LsRow(
+                          icon: Icons.help_outline_rounded,
+                          title: 'Help & Support',
+                          onTap: () =>
+                              _push(context, const SettingsScreen()),
+                        ),
+                        LsRow(
+                          icon: Icons.shield_outlined,
+                          title: 'Privacy & Security',
+                          onTap: () => _push(context,
+                              const ProfilePlaceholderScreen(
+                                  title: 'Privacy & Security')),
+                        ),
+                        LsRow(
+                          icon: Icons.info_outline_rounded,
+                          title: 'About LifeReset',
+                          onTap: () => _push(context,
+                              const ProfilePlaceholderScreen(
+                                  title: 'About LifeReset')),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _ProfileCard extends StatelessWidget {
-  const _ProfileCard({required this.profile, required this.onEdit});
+/// The gradient identity header: avatar, name, email, plan badge and a compact
+/// strip of real recovery stats.
+class _IdentityCard extends StatelessWidget {
+  const _IdentityCard({required this.profile, required this.onEdit});
 
   final UserProfile profile;
   final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final end = Color.lerp(colorScheme.primary, Colors.black, 0.35)!;
     final planLabel = profile.plan.isPremium
         ? 'Premium'
         : (profile.isOnTrial ? 'Free Trial' : 'Basic');
@@ -169,8 +165,9 @@ class _ProfileCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.lg),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [colorScheme.primary, end]),
+        gradient: HomeStyle.scoreGradient,
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        boxShadow: HomeStyle.softShadow,
       ),
       child: Column(
         children: [
@@ -178,7 +175,7 @@ class _ProfileCard extends StatelessWidget {
             children: [
               GestureDetector(
                 onTap: onEdit,
-                child: _Avatar(profile: profile, radius: 32),
+                child: _Avatar(profile: profile, radius: 30),
               ),
               const SizedBox(width: AppSizes.md),
               Expanded(
@@ -187,42 +184,151 @@ class _ProfileCard extends StatelessWidget {
                   children: [
                     Text(
                       profile.name.isEmpty ? 'Your name' : profile.name,
-                      style: textTheme.titleLarge?.copyWith(
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
                         color: Colors.white,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 19,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       profile.email,
-                      style: textTheme.bodySmall?.copyWith(
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.85),
+                        fontSize: 12.5,
                       ),
                     ),
-                    const SizedBox(height: AppSizes.xs),
+                    const SizedBox(height: AppSizes.sm),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: AppSizes.sm, vertical: 2),
+                          horizontal: 10, vertical: 3),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(AppSizes.radiusPill),
                       ),
-                      child: Text(planLabel,
-                          style:
-                              textTheme.labelSmall?.copyWith(color: Colors.white)),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.workspace_premium_rounded,
+                              color: Colors.white, size: 13),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              planLabel,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
+              _EditChip(onTap: onEdit),
             ],
           ),
           const SizedBox(height: AppSizes.lg),
-          Row(
-            children: [
-              _HeroStat(value: '${profile.streak}', label: 'Day Streak'),
-              _HeroStat(value: '${profile.recoveryScore}', label: 'Journey Score'),
-              _HeroStat(
-                  value: '${profile.completedTasks}', label: 'Tasks Completed'),
-            ],
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+            ),
+            child: Row(
+              children: [
+                _Stat(value: '${profile.streak}', label: 'Day Streak'),
+                _StatDivider(),
+                _Stat(value: '${profile.recoveryScore}', label: 'Journey Score'),
+                _StatDivider(),
+                _Stat(
+                    value: '${profile.completedTasks}',
+                    label: 'Tasks Done'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EditChip extends StatelessWidget {
+  const _EditChip({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.2),
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: const SizedBox(
+          width: 38,
+          height: 38,
+          child: Icon(Icons.edit_rounded, color: Colors.white, size: 18),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 30,
+      color: Colors.white.withValues(alpha: 0.25),
+    );
+  }
+}
+
+class _Stat extends StatelessWidget {
+  const _Stat({required this.value, required this.label});
+
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.85),
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
@@ -262,146 +368,101 @@ class _Avatar extends StatelessWidget {
   }
 }
 
-class _HeroStat extends StatelessWidget {
-  const _HeroStat({required this.value, required this.label});
-
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Expanded(
-      child: Column(
-        children: [
-          Text(value,
-              style: textTheme.titleLarge?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              )),
-          Text(label,
-              textAlign: TextAlign.center,
-              style: textTheme.labelSmall
-                  ?.copyWith(color: Colors.white.withValues(alpha: 0.85))),
-        ],
-      ),
-    );
-  }
-}
-
-class _SubscriptionStatusCard extends StatelessWidget {
-  const _SubscriptionStatusCard({required this.profile});
+class _SubscriptionCard extends StatelessWidget {
+  const _SubscriptionCard({required this.profile});
 
   final UserProfile profile;
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
     final planName = profile.plan.isPremium ? 'LifeReset Premium' : 'Basic Plan';
     final statusActive = profile.plan.isPremium || profile.isOnTrial;
 
-    return PCard(
+    return LsCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Text('👑', style: TextStyle(fontSize: 20)),
-              const SizedBox(width: AppSizes.sm),
+              const LsIconBadge(
+                  icon: Icons.workspace_premium_rounded, size: 40),
+              const SizedBox(width: AppSizes.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(planName, style: textTheme.titleSmall),
+                    Text(
+                      planName,
+                      style: const TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        color: HomeStyle.ink,
+                      ),
+                    ),
                     if (profile.isOnTrial)
-                      Text('${UserProfile.trialLengthDays} Days Free Trial',
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          )),
+                      const Text(
+                        '${UserProfile.trialLengthDays} days free trial',
+                        style: TextStyle(fontSize: 12.5, color: HomeStyle.inkSoft),
+                      ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.sm, vertical: 2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: (statusActive ? Colors.green : colorScheme.outline)
-                      .withValues(alpha: 0.15),
+                  color: (statusActive ? HomeStyle.success : HomeStyle.inkSoft)
+                      .withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(AppSizes.radiusPill),
                 ),
-                child: Text(statusActive ? 'Active' : 'Inactive',
-                    style: textTheme.labelSmall?.copyWith(
-                      color: statusActive ? Colors.green.shade700 : null,
-                    )),
+                child: Text(
+                  statusActive ? 'Active' : 'Inactive',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color:
+                        statusActive ? HomeStyle.success : HomeStyle.inkSoft,
+                  ),
+                ),
               ),
             ],
           ),
           if (profile.isOnTrial) ...[
             const SizedBox(height: AppSizes.md),
-            Text('Trial Progress', style: textTheme.labelMedium),
-            const SizedBox(height: AppSizes.xs),
             ClipRRect(
               borderRadius: BorderRadius.circular(AppSizes.radiusPill),
               child: LinearProgressIndicator(
                 value: profile.trialProgress,
-                minHeight: 6,
+                minHeight: 7,
+                backgroundColor: HomeStyle.lavender,
+                valueColor: const AlwaysStoppedAnimation(HomeStyle.primary),
               ),
             ),
             const SizedBox(height: AppSizes.xs),
             Row(
               children: [
-                Text(
-                  '${profile.trialDaysLeft} days left of ${UserProfile.trialLengthDays} days',
-                  style: textTheme.bodySmall
-                      ?.copyWith(color: colorScheme.onSurfaceVariant),
+                Expanded(
+                  child: Text(
+                    '${profile.trialDaysLeft} days left of ${UserProfile.trialLengthDays}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style:
+                        const TextStyle(fontSize: 12, color: HomeStyle.inkSoft),
+                  ),
                 ),
-                const Spacer(),
-                Text('${(profile.trialProgress * 100).round()}%',
-                    style: textTheme.labelSmall),
+                const SizedBox(width: AppSizes.sm),
+                Text(
+                  '${(profile.trialProgress * 100).round()}%',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: HomeStyle.primary,
+                  ),
+                ),
               ],
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _QuickAction extends StatelessWidget {
-  const _QuickAction({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
-          child: Column(
-            children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: colorScheme.primaryContainer.withValues(alpha: 0.5),
-                child: Icon(icon, color: colorScheme.primary),
-              ),
-              const SizedBox(height: AppSizes.xs),
-              Text(label,
-                  textAlign: TextAlign.center, style: textTheme.labelSmall),
-            ],
-          ),
-        ),
       ),
     );
   }

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
-import '../../../../shared/widgets/loading_view.dart';
+import '../../../../shared/widgets/ls_kit.dart';
+import '../../../home/presentation/widgets/home_style.dart';
 import '../../domain/entities/chat_message.dart';
 import '../controllers/chat_controller.dart';
 import '../providers/coach_providers.dart';
@@ -14,9 +15,17 @@ import 'suggested_actions_screen.dart';
 
 /// The AI Coach chat interface for a single conversation.
 class ChatScreen extends ConsumerStatefulWidget {
-  const ChatScreen({super.key, required this.conversationId});
+  const ChatScreen({
+    super.key,
+    required this.conversationId,
+    this.initialDraft,
+  });
 
   final String conversationId;
+
+  /// Optional text to pre-fill the composer with (e.g. a suggested topic). The
+  /// user still taps send — no message is sent automatically.
+  final String? initialDraft;
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -27,6 +36,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _scroll = ScrollController();
 
   String get _cid => widget.conversationId;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialDraft != null && widget.initialDraft!.isNotEmpty) {
+      _input.text = widget.initialDraft!;
+    }
+  }
 
   @override
   void dispose() {
@@ -62,89 +79,166 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     ref.listen(chatControllerProvider(_cid), (_, __) => _scrollToEnd());
 
     return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 0,
-        title: Row(
+      backgroundColor: HomeStyle.background,
+      body: SafeArea(
+        child: Column(
           children: [
-            const CoachAvatar(size: 36),
-            const SizedBox(width: AppSizes.sm),
-            Column(
+            _ChatHeader(
+              onBack: () => Navigator.of(context).maybePop(),
+              onMore: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => SuggestedActionsScreen(conversationId: _cid),
+                ),
+              ),
+            ),
+            if (chatState.crisisActive)
+              CrisisBanner(onDismiss: controller.dismissCrisis),
+            if (chatState.limitReached) const LimitBanner(),
+            Expanded(
+              child: messagesAsync.when(
+                loading: () => const LsLoader(),
+                error: (_, __) => const LsErrorState(
+                  title: 'Could not load chat',
+                  message: 'Please go back and try again.',
+                ),
+                data: (messages) => _MessageList(
+                  scrollController: _scroll,
+                  messages: messages,
+                  isTyping: chatState.isTyping,
+                  failedText: chatState.failedText,
+                  onRetry: controller.retry,
+                ),
+              ),
+            ),
+            _Composer(
+              input: _input,
+              enabled: !chatState.isTyping && !chatState.limitReached,
+              sending: chatState.isTyping,
+              onSend: controller.send,
+              onQuickAction: _openTool,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A clean chat header with the Coach identity and an online status dot.
+class _ChatHeader extends StatelessWidget {
+  const _ChatHeader({required this.onBack, required this.onMore});
+
+  final VoidCallback onBack;
+  final VoidCallback onMore;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.sm,
+        AppSizes.sm,
+        AppSizes.sm,
+        AppSizes.sm,
+      ),
+      decoration: const BoxDecoration(
+        color: HomeStyle.card,
+        border: Border(bottom: BorderSide(color: HomeStyle.border)),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: onBack,
+            icon: const Icon(Icons.arrow_back_rounded, color: HomeStyle.ink),
+            tooltip: 'Back',
+          ),
+          const CoachAvatar(size: 38),
+          const SizedBox(width: AppSizes.sm),
+          const Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('AI Coach', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'AI Coach',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: HomeStyle.ink,
+                  ),
+                ),
                 Row(
                   children: [
-                    const _OnlineDot(),
-                    const SizedBox(width: 4),
+                    _OnlineDot(),
+                    SizedBox(width: 4),
                     Text('Online',
-                        style: Theme.of(context).textTheme.labelSmall),
+                        style:
+                            TextStyle(fontSize: 11.5, color: HomeStyle.inkSoft)),
                   ],
                 ),
               ],
             ),
-          ],
-        ),
-        actions: [
+          ),
           IconButton(
-            icon: const Icon(Icons.more_horiz_rounded),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) =>
-                    SuggestedActionsScreen(conversationId: _cid),
-              ),
-            ),
+            onPressed: onMore,
+            icon: const Icon(Icons.tune_rounded, color: HomeStyle.primary),
+            tooltip: 'Suggested actions',
           ),
         ],
       ),
-      body: Column(
-        children: [
-          if (chatState.crisisActive)
-            CrisisBanner(onDismiss: controller.dismissCrisis),
-          if (chatState.limitReached) const LimitBanner(),
-          Expanded(
-            child: messagesAsync.when(
-              loading: () => const LoadingView(),
-              error: (_, __) => const Center(child: Text('Could not load chat')),
-              data: (messages) => _MessageList(
-                scrollController: _scroll,
-                messages: messages,
-                isTyping: chatState.isTyping,
-                failedText: chatState.failedText,
-                onRetry: controller.retry,
-              ),
-            ),
+    );
+  }
+}
+
+class _Composer extends StatelessWidget {
+  const _Composer({
+    required this.input,
+    required this.enabled,
+    required this.sending,
+    required this.onSend,
+    required this.onQuickAction,
+  });
+
+  final TextEditingController input;
+  final bool enabled;
+  final bool sending;
+  final ValueChanged<String> onSend;
+  final ValueChanged<String> onQuickAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: HomeStyle.card,
+        border: Border(top: BorderSide(color: HomeStyle.border)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSizes.md,
+            AppSizes.sm,
+            AppSizes.md,
+            AppSizes.sm,
           ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSizes.md,
-                AppSizes.sm,
-                AppSizes.md,
-                AppSizes.sm,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ChatInputBar(
+                controller: input,
+                enabled: enabled,
+                sending: sending,
+                onSend: onSend,
+                onQuickAction: onQuickAction,
               ),
-              child: Column(
-                children: [
-                  ChatInputBar(
-                    controller: _input,
-                    enabled: !chatState.isTyping && !chatState.limitReached,
-                    onSend: controller.send,
-                    onQuickAction: _openTool,
-                  ),
-                  const SizedBox(height: AppSizes.xs),
-                  Text(
-                    'AI Coach can make mistakes. Always trust your judgment.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                  ),
-                ],
+              const SizedBox(height: AppSizes.xs),
+              const Text(
+                'AI Coach can make mistakes. Always trust your judgment.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 10.5, color: HomeStyle.inkSoft),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -186,23 +280,26 @@ class _IntroBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     return Container(
       margin: const EdgeInsets.only(bottom: AppSizes.md),
       padding: const EdgeInsets.all(AppSizes.md),
       decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withValues(alpha: 0.4),
+        color: HomeStyle.lavenderLight,
         borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        border: Border.all(color: HomeStyle.border),
       ),
-      child: Row(
+      child: const Row(
         children: [
-          const CoachAvatar(size: 28),
-          const SizedBox(width: AppSizes.sm),
+          CoachAvatar(size: 30),
+          SizedBox(width: AppSizes.sm),
           Expanded(
             child: Text(
-              "This is a safe space. Share anything you're feeling. I'm here to listen.",
-              style: textTheme.bodySmall,
+              "This is a safe space. Share anything you're feeling — I'm here to listen.",
+              style: TextStyle(
+                fontSize: 12.5,
+                color: HomeStyle.ink,
+                height: 1.4,
+              ),
             ),
           ),
         ],
@@ -216,10 +313,17 @@ class _TodayDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSizes.sm),
+    return const Padding(
+      padding: EdgeInsets.only(bottom: AppSizes.sm),
       child: Center(
-        child: Text('Today', style: Theme.of(context).textTheme.labelSmall),
+        child: Text(
+          'Today',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: HomeStyle.inkSoft,
+          ),
+        ),
       ),
     );
   }
@@ -232,22 +336,22 @@ class _RetryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline_rounded,
-              size: AppSizes.iconSm, color: colorScheme.error),
+          const Icon(Icons.error_outline_rounded,
+              size: 18, color: Color(0xFFB91C1C)),
           const SizedBox(width: AppSizes.xs),
-          Text(
+          const Text(
             "Couldn't get a reply.",
-            style: Theme.of(context).textTheme.bodySmall,
+            style: TextStyle(fontSize: 12.5, color: HomeStyle.inkSoft),
           ),
           TextButton.icon(
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded, size: AppSizes.iconSm),
+            style: TextButton.styleFrom(foregroundColor: HomeStyle.primary),
+            icon: const Icon(Icons.refresh_rounded, size: 18),
             label: const Text('Retry'),
           ),
         ],
@@ -265,7 +369,7 @@ class _OnlineDot extends StatelessWidget {
       width: 8,
       height: 8,
       decoration: const BoxDecoration(
-        color: Color(0xFF2E9E63),
+        color: HomeStyle.success,
         shape: BoxShape.circle,
       ),
     );

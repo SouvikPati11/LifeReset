@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../home/presentation/widgets/home_style.dart';
 
 /// The standing safety disclaimer required on the AI Coach surfaces.
 class SafetyDisclaimer extends StatelessWidget {
@@ -11,24 +12,29 @@ class SafetyDisclaimer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     return Container(
-      padding: const EdgeInsets.all(AppSizes.sm),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.md,
+        vertical: AppSizes.sm + 2,
       ),
-      child: Row(
+      decoration: BoxDecoration(
+        color: HomeStyle.lavenderLight,
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        border: Border.all(color: HomeStyle.border),
+      ),
+      child: const Row(
         children: [
-          Icon(Icons.info_outline_rounded,
-              size: AppSizes.iconSm, color: colorScheme.onSurfaceVariant),
-          const SizedBox(width: AppSizes.sm),
+          Icon(Icons.shield_moon_rounded,
+              size: 16, color: HomeStyle.primary),
+          SizedBox(width: AppSizes.sm),
           Expanded(
             child: Text(
               text,
-              style: textTheme.bodySmall
-                  ?.copyWith(color: colorScheme.onSurfaceVariant),
+              style: TextStyle(
+                fontSize: 12,
+                color: HomeStyle.inkSoft,
+                height: 1.35,
+              ),
             ),
           ),
         ],
@@ -43,45 +49,54 @@ class CrisisBanner extends StatelessWidget {
 
   final VoidCallback onDismiss;
 
+  static const Color _bg = Color(0xFFFEF2F2);
+  static const Color _fg = Color(0xFFB91C1C);
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     return Container(
-      margin: const EdgeInsets.all(AppSizes.md),
+      margin: const EdgeInsets.fromLTRB(
+          AppSizes.md, AppSizes.md, AppSizes.md, 0),
       padding: const EdgeInsets.all(AppSizes.md),
       decoration: BoxDecoration(
-        color: colorScheme.errorContainer,
+        color: _bg,
         borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        border: Border.all(color: const Color(0xFFFECACA)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.health_and_safety_rounded, color: colorScheme.error),
+          const Icon(Icons.health_and_safety_rounded, color: _fg),
           const SizedBox(width: AppSizes.sm),
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'You are not alone',
-                  style: textTheme.titleSmall
-                      ?.copyWith(color: colorScheme.onErrorContainer),
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                    color: _fg,
+                  ),
                 ),
-                const SizedBox(height: 2),
+                SizedBox(height: 2),
                 Text(
                   'If you are in crisis, please contact your local emergency '
                   'number or a crisis helpline right now. Real help is '
                   'available.',
-                  style: textTheme.bodySmall
-                      ?.copyWith(color: colorScheme.onErrorContainer),
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: Color(0xFF7F1D1D),
+                    height: 1.4,
+                  ),
                 ),
               ],
             ),
           ),
           IconButton(
             onPressed: onDismiss,
-            icon: Icon(Icons.close_rounded, color: colorScheme.onErrorContainer),
+            icon: const Icon(Icons.close_rounded, color: _fg),
           ),
         ],
       ),
@@ -95,25 +110,28 @@ class LimitBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     return Container(
-      margin: const EdgeInsets.all(AppSizes.md),
+      margin: const EdgeInsets.fromLTRB(
+          AppSizes.md, AppSizes.md, AppSizes.md, 0),
       padding: const EdgeInsets.all(AppSizes.md),
       decoration: BoxDecoration(
-        color: colorScheme.secondaryContainer,
+        color: HomeStyle.lavender,
         borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        border: Border.all(color: HomeStyle.border),
       ),
-      child: Row(
+      child: const Row(
         children: [
-          Icon(Icons.lock_clock_rounded, color: colorScheme.onSecondaryContainer),
-          const SizedBox(width: AppSizes.sm),
+          Icon(Icons.lock_clock_rounded, color: HomeStyle.primaryDeep),
+          SizedBox(width: AppSizes.sm),
           Expanded(
             child: Text(
               "You've reached today's message limit. Upgrade to Premium for "
               'unlimited chats.',
-              style: textTheme.bodySmall
-                  ?.copyWith(color: colorScheme.onSecondaryContainer),
+              style: TextStyle(
+                fontSize: 12.5,
+                color: HomeStyle.primaryDeep,
+                height: 1.35,
+              ),
             ),
           ),
         ],

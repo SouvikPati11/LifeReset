@@ -3,37 +3,39 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../home/presentation/widgets/home_style.dart';
 import '../../domain/entities/chat_message.dart';
 import 'markdown_text.dart';
 
-/// The AI Coach avatar used beside AI messages and the typing indicator.
+/// The AI Coach avatar (a purple gradient disc) shown beside AI messages and the
+/// typing indicator.
 class CoachAvatar extends StatelessWidget {
-  const CoachAvatar({super.key, this.size = 32});
+  const CoachAvatar({super.key, this.size = 34});
 
   final double size;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: size,
       height: size,
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: colorScheme.primaryContainer,
+      decoration: const BoxDecoration(
+        gradient: HomeStyle.scoreGradient,
         shape: BoxShape.circle,
       ),
       child: Icon(
-        Icons.smart_toy_rounded,
-        size: size * 0.6,
-        color: colorScheme.primary,
+        Icons.auto_awesome_rounded,
+        size: size * 0.52,
+        color: Colors.white,
       ),
     );
   }
 }
 
-/// A single chat bubble. User messages are trailing/filled; AI messages are
-/// leading with an avatar and Markdown rendering. Long-press copies the text.
+/// A single chat bubble. User messages are trailing purple-gradient bubbles with
+/// white text; AI messages are leading white cards with an avatar and Markdown.
+/// Long-press copies the text.
 class MessageBubble extends StatelessWidget {
   const MessageBubble({super.key, required this.message});
 
@@ -41,21 +43,22 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     final isUser = message.isUser;
     final time = DateFormat('h:mm a').format(message.timestamp);
 
     final bubble = Container(
       constraints: BoxConstraints(
-        maxWidth: MediaQuery.sizeOf(context).width * 0.75,
+        maxWidth: MediaQuery.sizeOf(context).width * 0.76,
       ),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.md,
-        vertical: AppSizes.sm,
+        vertical: AppSizes.sm + 2,
       ),
       decoration: BoxDecoration(
-        color: isUser ? colorScheme.primary : colorScheme.surfaceContainerHigh,
+        gradient: isUser ? HomeStyle.scoreGradient : null,
+        color: isUser ? null : HomeStyle.card,
+        border: isUser ? null : Border.all(color: HomeStyle.border),
+        boxShadow: HomeStyle.softShadow,
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(AppSizes.radiusLg),
           topRight: const Radius.circular(AppSizes.radiusLg),
@@ -70,12 +73,20 @@ class MessageBubble extends StatelessWidget {
           if (isUser)
             Text(
               message.text,
-              style: textTheme.bodyMedium?.copyWith(color: Colors.white),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14.5,
+                height: 1.4,
+              ),
             )
           else
             MarkdownText(
               data: message.text,
-              style: textTheme.bodyMedium,
+              style: const TextStyle(
+                color: HomeStyle.ink,
+                fontSize: 14.5,
+                height: 1.45,
+              ),
             ),
           const SizedBox(height: 4),
           Row(
@@ -83,10 +94,11 @@ class MessageBubble extends StatelessWidget {
             children: [
               Text(
                 time,
-                style: textTheme.labelSmall?.copyWith(
+                style: TextStyle(
+                  fontSize: 10.5,
                   color: isUser
-                      ? Colors.white.withValues(alpha: 0.8)
-                      : colorScheme.onSurfaceVariant,
+                      ? Colors.white.withValues(alpha: 0.85)
+                      : HomeStyle.inkSoft,
                 ),
               ),
               if (isUser) ...[
@@ -94,7 +106,7 @@ class MessageBubble extends StatelessWidget {
                 Icon(
                   message.pending ? Icons.check_rounded : Icons.done_all_rounded,
                   size: 14,
-                  color: Colors.white.withValues(alpha: 0.8),
+                  color: Colors.white.withValues(alpha: 0.85),
                 ),
               ],
             ],
@@ -104,7 +116,7 @@ class MessageBubble extends StatelessWidget {
     );
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.xs + 1),
       child: Row(
         mainAxisAlignment:
             isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
@@ -133,7 +145,7 @@ class MessageBubble extends StatelessWidget {
   }
 }
 
-/// Animated "AI Coach is typing…" indicator.
+/// Animated "AI Coach is typing…" indicator (three pulsing dots).
 class TypingIndicator extends StatefulWidget {
   const TypingIndicator({super.key});
 
@@ -156,10 +168,8 @@ class _TypingIndicatorState extends State<TypingIndicator>
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSizes.xs),
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.xs + 1),
       child: Row(
         children: [
           const CoachAvatar(),
@@ -167,11 +177,18 @@ class _TypingIndicatorState extends State<TypingIndicator>
           Container(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSizes.md,
-              vertical: AppSizes.sm,
+              vertical: AppSizes.sm + 2,
             ),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+              color: HomeStyle.card,
+              border: Border.all(color: HomeStyle.border),
+              boxShadow: HomeStyle.softShadow,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(AppSizes.radiusLg),
+                topRight: Radius.circular(AppSizes.radiusLg),
+                bottomLeft: Radius.circular(AppSizes.xs),
+                bottomRight: Radius.circular(AppSizes.radiusLg),
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -181,21 +198,25 @@ class _TypingIndicatorState extends State<TypingIndicator>
                     animation: _controller,
                     builder: (context, _) {
                       final t = (_controller.value + i * 0.2) % 1.0;
-                      final opacity = 0.3 + 0.7 * (1 - (t - 0.5).abs() * 2).clamp(0.0, 1.0);
+                      final opacity =
+                          0.3 + 0.7 * (1 - (t - 0.5).abs() * 2).clamp(0.0, 1.0);
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 2),
                         child: Opacity(
                           opacity: opacity,
-                          child: CircleAvatar(
-                            radius: 3,
-                            backgroundColor: colorScheme.primary,
+                          child: const CircleAvatar(
+                            radius: 3.5,
+                            backgroundColor: HomeStyle.primary,
                           ),
                         ),
                       );
                     },
                   ),
                 const SizedBox(width: AppSizes.sm),
-                Text('AI Coach is typing…', style: textTheme.bodySmall),
+                const Text(
+                  'AI Coach is typing…',
+                  style: TextStyle(fontSize: 12.5, color: HomeStyle.inkSoft),
+                ),
               ],
             ),
           ),

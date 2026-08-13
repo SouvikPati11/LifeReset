@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_sizes.dart';
-import '../../../../shared/widgets/loading_view.dart';
+import '../../../../shared/widgets/ls_kit.dart';
+import '../../../home/presentation/widgets/home_style.dart';
 import '../../domain/entities/user_profile.dart';
 import '../providers/profile_providers.dart';
 import '../widgets/profile_widgets.dart';
 import 'choose_plan_screen.dart';
-import 'profile_placeholder_screen.dart';
 
 /// Subscription overview: current plan, trial status and benefits.
 class SubscriptionScreen extends ConsumerWidget {
@@ -26,40 +26,43 @@ class SubscriptionScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(profileProvider);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Subscription'),
-        actions: [
-          IconButton(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) =>
-                    const ProfilePlaceholderScreen(title: 'Subscription Help'),
-              ),
-            ),
-            icon: const Icon(Icons.help_outline_rounded),
-          ),
-        ],
-      ),
+      backgroundColor: HomeStyle.background,
       body: SafeArea(
-        child: profileAsync.when(
-          loading: () => const LoadingView(),
-          error: (_, __) => const Center(child: Text('Could not load')),
-          data: (profile) => ListView(
-            padding: const EdgeInsets.all(AppSizes.md),
-            children: [
-              _PremiumBanner(benefits: _benefits),
-              const SizedBox(height: AppSizes.lg),
-              Text('Your Plan', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: AppSizes.sm),
-              _PlanDetails(profile: profile),
-              const SizedBox(height: AppSizes.lg),
-              _UpgradeCard(
-                onChoose: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ChoosePlanScreen()),
+        bottom: false,
+        child: Column(
+          children: [
+            LsHeader(
+              title: 'Subscription',
+              subtitle: 'Your plan and benefits',
+              onBack: () => Navigator.of(context).maybePop(),
+            ),
+            const SizedBox(height: AppSizes.md),
+            Expanded(
+              child: profileAsync.when(
+                loading: () => const LsLoader(),
+                error: (_, __) =>
+                    const LsErrorState(title: 'Could not load'),
+                data: (profile) => ListView(
+                  padding: const EdgeInsets.fromLTRB(
+                      AppSizes.lg, 0, AppSizes.lg, AppSizes.xl),
+                  children: [
+                    const _PremiumBanner(benefits: _benefits),
+                    const SizedBox(height: AppSizes.lg),
+                    const LsSectionTitle('Your plan'),
+                    const SizedBox(height: AppSizes.md),
+                    _PlanDetails(profile: profile),
+                    const SizedBox(height: AppSizes.lg),
+                    _UpgradeCard(
+                      onChoose: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (_) => const ChoosePlanScreen()),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -73,41 +76,47 @@ class _PremiumBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final end = Color.lerp(colorScheme.primary, Colors.black, 0.35)!;
     return Container(
       padding: const EdgeInsets.all(AppSizes.lg),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [colorScheme.primary, end]),
+        gradient: HomeStyle.scoreGradient,
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        boxShadow: HomeStyle.softShadow,
       ),
       child: Column(
         children: [
-          const Text('👑', style: TextStyle(fontSize: 28)),
+          const Icon(Icons.workspace_premium_rounded,
+              color: Colors.white, size: 34),
           const SizedBox(height: AppSizes.sm),
-          Text('LifeReset Premium',
-              style: textTheme.titleLarge?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              )),
-          Text('Unlock your full potential',
-              style: textTheme.bodySmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.9),
-              )),
+          const Text(
+            'LifeReset Premium',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 19,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          Text(
+            'Unlock your full potential',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.9),
+              fontSize: 12.5,
+            ),
+          ),
           const SizedBox(height: AppSizes.md),
           for (final b in benefits)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
+              padding: const EdgeInsets.symmetric(vertical: 3),
               child: Row(
                 children: [
                   const Icon(Icons.check_circle_rounded,
-                      color: Colors.white, size: AppSizes.iconSm),
+                      color: Colors.white, size: 18),
                   const SizedBox(width: AppSizes.sm),
                   Expanded(
-                    child: Text(b,
-                        style:
-                            textTheme.bodyMedium?.copyWith(color: Colors.white)),
+                    child: Text(
+                      b,
+                      style: const TextStyle(color: Colors.white, fontSize: 13.5),
+                    ),
                   ),
                 ],
               ),
@@ -136,9 +145,7 @@ class _PlanDetails extends StatelessWidget {
             value: (profile.plan.isPremium || onTrial) ? 'Active' : 'Inactive',
           ),
           _Row(label: 'Billing', value: onTrial ? 'Free Trial' : '—'),
-          _Row(
-              label: 'Next Billing',
-              value: onTrial ? 'Not applicable' : '—'),
+          _Row(label: 'Next Billing', value: onTrial ? 'Not applicable' : '—'),
           _Row(
             label: 'Trial Ends',
             value: trialEnds == null
@@ -147,33 +154,41 @@ class _PlanDetails extends StatelessWidget {
           ),
           if (onTrial) ...[
             const SizedBox(height: AppSizes.sm),
-            Text(
+            const Text(
               "You won't be charged during your free trial.",
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+              style: TextStyle(fontSize: 12.5, color: HomeStyle.inkSoft),
             ),
             const SizedBox(height: AppSizes.md),
-            Text('Trial Progress',
-                style: Theme.of(context).textTheme.labelMedium),
-            const SizedBox(height: AppSizes.xs),
             ClipRRect(
               borderRadius: BorderRadius.circular(AppSizes.radiusPill),
               child: LinearProgressIndicator(
                 value: profile.trialProgress,
-                minHeight: 6,
+                minHeight: 7,
+                backgroundColor: HomeStyle.lavender,
+                valueColor: const AlwaysStoppedAnimation(HomeStyle.primary),
               ),
             ),
             const SizedBox(height: AppSizes.xs),
             Row(
               children: [
-                Text(
-                  '${profile.trialDaysLeft} days left of ${UserProfile.trialLengthDays} days',
-                  style: Theme.of(context).textTheme.bodySmall,
+                Expanded(
+                  child: Text(
+                    '${profile.trialDaysLeft} days left of ${UserProfile.trialLengthDays}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style:
+                        const TextStyle(fontSize: 12, color: HomeStyle.inkSoft),
+                  ),
                 ),
-                const Spacer(),
-                Text('${(profile.trialProgress * 100).round()}%',
-                    style: Theme.of(context).textTheme.labelSmall),
+                const SizedBox(width: AppSizes.sm),
+                Text(
+                  '${(profile.trialProgress * 100).round()}%',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: HomeStyle.primary,
+                  ),
+                ),
               ],
             ),
           ],
@@ -191,18 +206,22 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
       child: Row(
         children: [
           Expanded(
             child: Text(label,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                )),
+                style: const TextStyle(fontSize: 13.5, color: HomeStyle.inkSoft)),
           ),
-          Text(value, style: textTheme.titleSmall),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+              color: HomeStyle.ink,
+            ),
+          ),
         ],
       ),
     );
@@ -216,33 +235,31 @@ class _UpgradeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(AppSizes.lg),
       decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withValues(alpha: 0.35),
+        color: HomeStyle.lavenderLight,
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        border: Border.all(color: HomeStyle.border),
       ),
       child: Column(
         children: [
-          Text('Upgrade to Continue',
-              style: textTheme.titleMedium?.copyWith(color: colorScheme.primary)),
-          const SizedBox(height: AppSizes.xs),
-          Text(
-            'Your premium features will unlock automatically when your trial ends.',
-            textAlign: TextAlign.center,
-            style: textTheme.bodySmall
-                ?.copyWith(color: colorScheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: AppSizes.md),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: onChoose,
-              child: const Text('Choose a Plan'),
+          const Text(
+            'Upgrade to Continue',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: HomeStyle.primaryDeep,
             ),
           ),
+          const SizedBox(height: AppSizes.xs),
+          const Text(
+            'Your premium features will unlock automatically when your trial ends.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12.5, color: HomeStyle.inkSoft, height: 1.4),
+          ),
+          const SizedBox(height: AppSizes.md),
+          LsButton(label: 'Choose a Plan', onPressed: onChoose),
         ],
       ),
     );

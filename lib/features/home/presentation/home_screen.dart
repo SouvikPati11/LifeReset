@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../coach/presentation/screens/coach_home_screen.dart';
-import '../../profile/presentation/screens/profile_home_screen.dart';
 import 'views/home_dashboard_view.dart';
+import 'widgets/coach_tab_navigator.dart';
 import 'widgets/home_style.dart';
 import 'widgets/journey_tab_navigator.dart';
 import 'widgets/plan_tab_navigator.dart';
+import 'widgets/profile_tab_navigator.dart';
 
 /// The user app shell: a Material 3 bottom-navigation host.
 ///
@@ -63,8 +63,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // Journey tab runs in its own Navigator so its detail pushes keep the
           // shell's bottom navigation visible (Journey stays selected).
           JourneyTabNavigator(),
-          CoachHomeScreen(),
-          ProfileHomeScreen(),
+          // Coach and Profile tabs run in their own Navigators too, so their
+          // sub-screens (history, settings, notifications, …) keep the shell's
+          // bottom navigation visible. The AI chat is opened on the root
+          // navigator (full-screen) from within Coach.
+          CoachTabNavigator(),
+          ProfileTabNavigator(),
         ],
       ),
       bottomNavigationBar: _wellnessNav(

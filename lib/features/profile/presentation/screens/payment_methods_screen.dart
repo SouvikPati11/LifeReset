@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../shared/widgets/ls_kit.dart';
+import '../../../home/presentation/widgets/home_style.dart';
 import '../widgets/profile_widgets.dart';
 import 'choose_plan_screen.dart';
 import 'profile_placeholder_screen.dart';
@@ -18,75 +20,91 @@ class PaymentMethodsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Payment Methods'),
-        actions: [
-          TextButton.icon(
-            onPressed: () => _push(context,
-                const ProfilePlaceholderScreen(title: 'Add Payment Method')),
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Add'),
-          ),
-        ],
-      ),
+      backgroundColor: HomeStyle.background,
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(AppSizes.md),
+        bottom: false,
+        child: Column(
           children: [
-            PCard(
-              child: Column(
-                children: [
-                  Icon(Icons.credit_card_off_outlined,
-                      size: 40, color: colorScheme.onSurfaceVariant),
-                  const SizedBox(height: AppSizes.sm),
-                  Text('No payment method yet', style: textTheme.titleSmall),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Add one when you upgrade — you won’t be charged during your '
-                    'free trial.',
-                    textAlign: TextAlign.center,
-                    style: textTheme.bodySmall
-                        ?.copyWith(color: colorScheme.onSurfaceVariant),
-                  ),
-                ],
+            LsHeader(
+              title: 'Payment Methods',
+              subtitle: 'Manage billing',
+              onBack: () => Navigator.of(context).maybePop(),
+              trailing: LsSquareButton(
+                icon: Icons.add_rounded,
+                onTap: () => _push(context,
+                    const ProfilePlaceholderScreen(title: 'Add Payment Method')),
               ),
             ),
             const SizedBox(height: AppSizes.md),
-            PCard(
-              padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
-              child: Column(
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSizes.lg, 0, AppSizes.lg, AppSizes.xl),
                 children: [
-                  SettingTile(
-                    icon: Icons.receipt_long_outlined,
-                    title: 'Billing History',
-                    subtitle: 'View all your payments and invoices',
-                    onTap: () => _push(context,
-                        const ProfilePlaceholderScreen(title: 'Billing History')),
+                  const LsCard(
+                    padding: EdgeInsets.all(AppSizes.lg),
+                    child: Column(
+                      children: [
+                        Icon(Icons.credit_card_off_outlined,
+                            size: 40, color: HomeStyle.inkSoft),
+                        SizedBox(height: AppSizes.sm),
+                        Text(
+                          'No payment method yet',
+                          style: TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w700,
+                            color: HomeStyle.ink,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Add one when you upgrade — you won’t be charged '
+                          'during your free trial.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              fontSize: 12.5,
+                              color: HomeStyle.inkSoft,
+                              height: 1.4),
+                        ),
+                      ],
+                    ),
                   ),
-                  SettingTile(
-                    icon: Icons.tune_rounded,
-                    title: 'Manage Subscription',
-                    subtitle: 'Cancel or update your subscription',
-                    onTap: () => _push(context, const ChoosePlanScreen()),
+                  const SizedBox(height: AppSizes.md),
+                  LsGroup(
+                    children: [
+                      SettingTile(
+                        icon: Icons.receipt_long_outlined,
+                        title: 'Billing History',
+                        subtitle: 'View all your payments and invoices',
+                        onTap: () => _push(
+                            context,
+                            const ProfilePlaceholderScreen(
+                                title: 'Billing History')),
+                      ),
+                      SettingTile(
+                        icon: Icons.tune_rounded,
+                        title: 'Manage Subscription',
+                        subtitle: 'Cancel or update your subscription',
+                        onTap: () =>
+                            _push(context, const ChoosePlanScreen()),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSizes.lg),
-            Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.lock_outline_rounded,
-                      size: 14, color: colorScheme.onSurfaceVariant),
-                  const SizedBox(width: AppSizes.xs),
-                  Text('All payments are secure and encrypted.',
-                      style: textTheme.labelSmall
-                          ?.copyWith(color: colorScheme.onSurfaceVariant)),
+                  const SizedBox(height: AppSizes.lg),
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.lock_outline_rounded,
+                          size: 14, color: HomeStyle.inkSoft),
+                      SizedBox(width: AppSizes.xs),
+                      Flexible(
+                        child: Text('All payments are secure and encrypted.',
+                            style: TextStyle(
+                                fontSize: 11.5, color: HomeStyle.inkSoft)),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),

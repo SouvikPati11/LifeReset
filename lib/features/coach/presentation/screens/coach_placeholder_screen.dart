@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/app_sizes.dart';
+import '../../../../shared/widgets/ls_kit.dart';
+import '../../../home/presentation/widgets/home_style.dart';
 
 /// Placeholder destination for the AI Coach's navigation-only actions
 /// (quick actions / suggested tools whose modules are not built yet).
@@ -11,27 +12,24 @@ class CoachPlaceholderScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSizes.lg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.spa_rounded, size: 48, color: colorScheme.primary),
-              const SizedBox(height: AppSizes.md),
-              Text(title, style: textTheme.titleLarge),
-              const SizedBox(height: AppSizes.xs),
-              Text(
-                'Coming soon.',
-                style: textTheme.bodyMedium
-                    ?.copyWith(color: colorScheme.onSurfaceVariant),
+      backgroundColor: HomeStyle.background,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            LsHeader(
+              title: title,
+              onBack: () => Navigator.of(context).maybePop(),
+            ),
+            const Expanded(
+              child: LsEmpty(
+                icon: Icons.spa_rounded,
+                title: 'Coming soon',
+                message: "We're still building this. Check back shortly.",
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/errors/failures.dart';
-import '../../../../shared/widgets/primary_button.dart';
+import '../../../../shared/widgets/ls_kit.dart';
+import '../../../home/presentation/widgets/home_style.dart';
 import '../../domain/entities/user_profile.dart';
 import '../controllers/profile_controller.dart';
 import '../providers/profile_providers.dart';
@@ -53,7 +54,6 @@ class _ChoosePlanScreenState extends ConsumerState<ChoosePlanScreen> {
   Widget build(BuildContext context) {
     final saving = ref.watch(profileControllerProvider).isLoading;
 
-    // Default the selection to the user's current plan, once.
     final current = ref.watch(profileProvider).valueOrNull?.plan;
     if (!_initialized && current != null) {
       _initialized = true;
@@ -71,13 +71,20 @@ class _ChoosePlanScreenState extends ConsumerState<ChoosePlanScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Choose a Plan')),
+      backgroundColor: HomeStyle.background,
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
+            LsHeader(
+              title: 'Choose a Plan',
+              onBack: () => Navigator.of(context).maybePop(),
+            ),
+            const SizedBox(height: AppSizes.md),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.all(AppSizes.md),
+                padding: const EdgeInsets.fromLTRB(
+                    AppSizes.lg, 0, AppSizes.lg, AppSizes.md),
                 children: [
                   _PlanCard(
                     plan: SubscriptionPlan.premium,
@@ -105,39 +112,51 @@ class _ChoosePlanScreenState extends ConsumerState<ChoosePlanScreen> {
                         setState(() => _selected = SubscriptionPlan.free),
                   ),
                   const SizedBox(height: AppSizes.lg),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.lock_outline_rounded,
-                          size: AppSizes.iconSm,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant),
-                      const SizedBox(width: AppSizes.xs),
-                      Text('Secure Checkout',
-                          style: Theme.of(context).textTheme.labelMedium),
-                    ],
-                  ),
-                  const SizedBox(height: AppSizes.xs),
-                  Text(
-                    "Cancel anytime. You won't be charged during trial.",
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                  ),
+                  const _SecureNote(),
                 ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(AppSizes.md),
-              child: PrimaryButton(
+              padding: const EdgeInsets.all(AppSizes.lg),
+              child: LsButton(
                 label: 'Continue',
-                isLoading: saving,
+                loading: saving,
                 onPressed: _continue,
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SecureNote extends StatelessWidget {
+  const _SecureNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.lock_outline_rounded, size: 16, color: HomeStyle.inkSoft),
+            SizedBox(width: AppSizes.xs),
+            Text('Secure Checkout',
+                style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: HomeStyle.inkSoft)),
+          ],
+        ),
+        SizedBox(height: AppSizes.xs),
+        Text(
+          "Cancel anytime. You won't be charged during trial.",
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 12, color: HomeStyle.inkSoft),
+        ),
+      ],
     );
   }
 }
@@ -167,20 +186,19 @@ class _PlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppSizes.radiusLg),
       child: Container(
         padding: const EdgeInsets.all(AppSizes.lg),
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerLow,
+          color: selected ? HomeStyle.lavenderLight : HomeStyle.card,
           borderRadius: BorderRadius.circular(AppSizes.radiusLg),
           border: Border.all(
-            color: selected ? colorScheme.primary : colorScheme.outlineVariant,
+            color: selected ? HomeStyle.primary : HomeStyle.border,
             width: selected ? 1.8 : 1,
           ),
+          boxShadow: HomeStyle.softShadow,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -191,7 +209,7 @@ class _PlanCard extends StatelessWidget {
                   plan.isPremium
                       ? Icons.workspace_premium_rounded
                       : Icons.auto_awesome_rounded,
-                  color: colorScheme.primary,
+                  color: HomeStyle.primary,
                 ),
                 const SizedBox(width: AppSizes.sm),
                 Expanded(
@@ -200,28 +218,40 @@ class _PlanCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Text(title, style: textTheme.titleMedium),
+                          Flexible(
+                            child: Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: HomeStyle.ink,
+                              ),
+                            ),
+                          ),
                           if (mostPopular) ...[
                             const SizedBox(width: AppSizes.sm),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: AppSizes.sm, vertical: 2),
                               decoration: BoxDecoration(
-                                color: colorScheme.primary,
+                                color: HomeStyle.primary,
                                 borderRadius:
                                     BorderRadius.circular(AppSizes.radiusPill),
                               ),
-                              child: Text('Most Popular',
-                                  style: textTheme.labelSmall
-                                      ?.copyWith(color: Colors.white)),
+                              child: const Text('Popular',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w700)),
                             ),
                           ],
                         ],
                       ),
                       Text(tagline,
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          )),
+                          style: const TextStyle(
+                              fontSize: 12.5, color: HomeStyle.inkSoft)),
                     ],
                   ),
                 ),
@@ -229,7 +259,7 @@ class _PlanCard extends StatelessWidget {
                   selected
                       ? Icons.check_circle_rounded
                       : Icons.circle_outlined,
-                  color: selected ? colorScheme.primary : colorScheme.outline,
+                  color: selected ? HomeStyle.primary : HomeStyle.border,
                 ),
               ],
             ),
@@ -238,18 +268,20 @@ class _PlanCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(price,
-                    style: textTheme.headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.w700)),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4, left: 2),
-                  child: Text('/month', style: textTheme.bodySmall),
+                    style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: HomeStyle.ink)),
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 4, left: 2),
+                  child: Text('/month',
+                      style: TextStyle(fontSize: 12.5, color: HomeStyle.inkSoft)),
                 ),
               ],
             ),
             Text(yearly,
-                style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                )),
+                style:
+                    const TextStyle(fontSize: 12.5, color: HomeStyle.inkSoft)),
             const SizedBox(height: AppSizes.md),
             for (final (label, included) in features)
               Padding(
@@ -260,17 +292,16 @@ class _PlanCard extends StatelessWidget {
                       included
                           ? Icons.check_circle_rounded
                           : Icons.cancel_rounded,
-                      size: AppSizes.iconSm,
-                      color: included
-                          ? colorScheme.primary
-                          : colorScheme.outline,
+                      size: 18,
+                      color: included ? HomeStyle.success : HomeStyle.inkSoft,
                     ),
                     const SizedBox(width: AppSizes.sm),
                     Expanded(
                       child: Text(
                         label,
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: included ? null : colorScheme.onSurfaceVariant,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          color: included ? HomeStyle.ink : HomeStyle.inkSoft,
                         ),
                       ),
                     ),
