@@ -19,9 +19,13 @@ abstract interface class AdminRepository {
   Future<Result<List<TopProgram>>> getTopPrograms({int limit});
   Future<Result<List<SystemService>>> getSystemStatus();
   Future<Result<List<ProblemDistribution>>> getProblemDistribution();
+  Future<Result<TrackingAnalytics>> getTrackingAnalytics();
+  Future<Result<ProgressAnalytics>> getProgressAnalytics();
+  Future<Result<CoachAnalytics>> getCoachAnalytics();
 
   // Users (paginated).
   Future<Result<AdminUsersPage>> fetchUsersPage({DateTime? before, int limit});
+  Future<Result<AdminUser?>> findUserByEmail(String email);
 
   // Content lists (streamed, cached).
   Stream<List<ProgramItem>> watchPrograms();
@@ -30,6 +34,8 @@ abstract interface class AdminRepository {
   Stream<List<QuoteItem>> watchQuotes();
   Stream<List<FaqItem>> watchFaqs();
   Stream<ContentPage> watchContentPage(String docId);
+  Stream<List<AdminUser>> watchAdminUsers();
+  Stream<List<AuditLogEntry>> watchAuditLogs({int limit});
   Stream<List<AdminNotificationItem>> watchNotifications();
   Stream<List<TransactionItem>> watchTransactions();
   Stream<AppSettings> watchSettings();
@@ -42,4 +48,14 @@ abstract interface class AdminRepository {
   Future<Result<String>> createDoc(String collection, Map<String, dynamic> data);
   Future<Result<void>> setDoc(String collection, String id, Map<String, dynamic> data);
   Future<Result<void>> deleteDoc(String collection, String id);
+
+  // Append-only audit trail.
+  Future<Result<void>> logAdminAction({
+    required String actorUid,
+    required String actorEmail,
+    required String action,
+    required String module,
+    String? targetId,
+    List<String> fields,
+  });
 }

@@ -126,6 +126,126 @@ class TopProgram {
   final String iconKey;
 }
 
+/// One mood bucket in the Daily Tracking distribution (read-only aggregate over
+/// every user's `mood_history` check-ins).
+class MoodSlice {
+  const MoodSlice({
+    required this.key,
+    required this.label,
+    required this.emoji,
+    required this.count,
+  });
+
+  final String key;
+  final String label;
+  final String emoji;
+  final int count;
+}
+
+/// Aggregate analytics for user daily tracking (mood check-ins). Read-only.
+class TrackingAnalytics {
+  const TrackingAnalytics({
+    required this.totalCheckIns,
+    required this.checkInsToday,
+    required this.checkIns7d,
+    required this.moods,
+  });
+
+  final int totalCheckIns;
+  final int checkInsToday;
+  final int checkIns7d;
+  final List<MoodSlice> moods;
+
+  factory TrackingAnalytics.empty() => const TrackingAnalytics(
+        totalCheckIns: 0,
+        checkInsToday: 0,
+        checkIns7d: 0,
+        moods: [],
+      );
+}
+
+/// One recovery-score band and how many users fall in it.
+class ScoreBucket {
+  const ScoreBucket({required this.label, required this.count});
+  final String label;
+  final int count;
+}
+
+/// Aggregate analytics for user recovery progress. Read-only; reuses the
+/// existing `users/{uid}` recovery fields and `journal_entries`.
+class ProgressAnalytics {
+  const ProgressAnalytics({
+    required this.averageRecoveryScore,
+    required this.averageStreak,
+    required this.averageDay,
+    required this.journalEntries,
+    required this.scoreBuckets,
+  });
+
+  final double averageRecoveryScore;
+  final double averageStreak;
+  final double averageDay;
+  final int journalEntries;
+  final List<ScoreBucket> scoreBuckets;
+
+  factory ProgressAnalytics.empty() => const ProgressAnalytics(
+        averageRecoveryScore: 0,
+        averageStreak: 0,
+        averageDay: 0,
+        journalEntries: 0,
+        scoreBuckets: [],
+      );
+}
+
+/// Aggregate AI Coach usage analytics. Read-only and privacy-preserving: counts
+/// only, never conversation content (which stays private to each user).
+class CoachAnalytics {
+  const CoachAnalytics({
+    required this.totalConversations,
+    required this.conversations7d,
+    required this.conversations30d,
+    required this.totalUsers,
+  });
+
+  final int totalConversations;
+  final int conversations7d;
+  final int conversations30d;
+  final int totalUsers;
+
+  double get avgPerUser =>
+      totalUsers == 0 ? 0 : totalConversations / totalUsers;
+
+  factory CoachAnalytics.empty() => const CoachAnalytics(
+        totalConversations: 0,
+        conversations7d: 0,
+        conversations30d: 0,
+        totalUsers: 0,
+      );
+}
+
+/// One append-only entry in the admin audit trail (`audit_logs`).
+class AuditLogEntry {
+  const AuditLogEntry({
+    required this.id,
+    required this.actorUid,
+    required this.actorEmail,
+    required this.action,
+    required this.module,
+    required this.targetId,
+    required this.fields,
+    required this.timestamp,
+  });
+
+  final String id;
+  final String actorUid;
+  final String actorEmail;
+  final String action;
+  final String module;
+  final String targetId;
+  final List<String> fields;
+  final DateTime? timestamp;
+}
+
 class SystemService {
   const SystemService({required this.name, required this.healthy});
   final String name;

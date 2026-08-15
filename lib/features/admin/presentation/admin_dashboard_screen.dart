@@ -6,13 +6,16 @@ import '../../authentication/presentation/controllers/auth_controller.dart';
 import '../../authentication/presentation/providers/user_providers.dart';
 import 'views/admin_users_view.dart';
 import 'views/analytics_view.dart';
+import 'views/coach_analytics_view.dart';
 import 'views/content_pages_view.dart';
 import 'views/dashboard_view.dart';
 import 'views/daily_tasks_view.dart';
+import 'views/daily_tracking_view.dart';
 import 'views/faqs_view.dart';
 import 'views/notifications_view.dart';
 import 'views/problems_view.dart';
 import 'views/programs_view.dart';
+import 'views/progress_view.dart';
 import 'views/prompts_view.dart';
 import 'views/quotes_view.dart';
 import 'views/reports_view.dart';
@@ -40,6 +43,12 @@ final List<AdminNavGroup> _groups = [
         subtitle: 'Recovery programs and their daily plans.'),
     AdminNavItem('Daily Tasks', Icons.checklist_rounded, DailyTasksView.new,
         subtitle: 'Per-day tasks inside each plan.'),
+    AdminNavItem('Daily Tracking', Icons.mood_rounded, DailyTrackingView.new,
+        subtitle: 'Mood check-in analytics (read-only).'),
+    AdminNavItem('Progress', Icons.trending_up_rounded, ProgressView.new,
+        subtitle: 'Recovery-progress analytics (read-only).'),
+    AdminNavItem('AI Coach', Icons.smart_toy_rounded, CoachAnalyticsView.new,
+        subtitle: 'AI Coach usage analytics (read-only).'),
     AdminNavItem('Journal Prompts', Icons.edit_note_rounded, PromptsView.new,
         subtitle: 'Reflective prompts for journaling.'),
     AdminNavItem('Daily Quotes', Icons.format_quote_rounded, QuotesView.new,

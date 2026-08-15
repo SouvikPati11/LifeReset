@@ -47,6 +47,32 @@ final problemDistributionProvider =
   return r.when(success: (d) => d, failure: (_) => const []);
 });
 
+/// Daily Tracking (mood check-in) analytics.
+final trackingAnalyticsProvider = FutureProvider<TrackingAnalytics>((ref) async {
+  final r = await ref.watch(adminRepositoryProvider).getTrackingAnalytics();
+  return r.when(success: (a) => a, failure: (_) => TrackingAnalytics.empty());
+});
+
+/// Recovery-progress analytics.
+final progressAnalyticsProvider = FutureProvider<ProgressAnalytics>((ref) async {
+  final r = await ref.watch(adminRepositoryProvider).getProgressAnalytics();
+  return r.when(success: (a) => a, failure: (_) => ProgressAnalytics.empty());
+});
+
+/// AI Coach usage analytics (privacy-preserving counts only).
+final coachAnalyticsProvider = FutureProvider<CoachAnalytics>((ref) async {
+  final r = await ref.watch(adminRepositoryProvider).getCoachAnalytics();
+  return r.when(success: (a) => a, failure: (_) => CoachAnalytics.empty());
+});
+
+/// Administrator accounts (role == admin).
+final adminUsersListProvider = StreamProvider<List<AdminUser>>(
+    (ref) => ref.watch(adminRepositoryProvider).watchAdminUsers());
+
+/// Append-only admin audit trail.
+final auditLogsProvider = StreamProvider<List<AuditLogEntry>>(
+    (ref) => ref.watch(adminRepositoryProvider).watchAuditLogs());
+
 // Content streams.
 final programsProvider = StreamProvider<List<ProgramItem>>(
     (ref) => ref.watch(adminRepositoryProvider).watchPrograms());

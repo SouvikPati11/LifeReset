@@ -119,6 +119,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Help Center FAQs — readable by any signed-in user; writable only by
+    // admins (managed through the in-app Admin Panel). Terms of Service and
+    // Help Center page content live under app_config/{terms,help} and are
+    // already covered by the app_config rule below.
+    match /faqs/{faqId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
     // Admin-authored notifications (sending logic is out of scope).
     match /notifications/{notificationId} {
       allow read: if isSignedIn();
@@ -154,6 +163,15 @@ service cloud.firestore {
     match /app_config/{docId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
+    }
+
+    // Admin audit trail. Append-only: admins may read the history and add new
+    // entries, but no one may edit or delete an entry (including admins), so the
+    // record of administrator actions cannot be rewritten from the client.
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
     }
 
     // Admin analytics: collection-group reads across all users' private data.

@@ -3,10 +3,15 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/utils/result.dart';
+import '../../../authentication/presentation/providers/user_providers.dart';
 import '../../domain/entities/admin_models.dart';
 import '../providers/admin_providers.dart';
 
 /// Shared write controller for all Admin CRUD (create / update / delete).
+///
+/// Every successful write is recorded in the append-only audit trail
+/// (`audit_logs`) so administrator actions are traceable. Audit writes are
+/// fire-and-forget: a failure to log never fails or blocks the primary write.
 class AdminWriteController extends AutoDisposeAsyncNotifier<void> {
   @override
   FutureOr<void> build() {}
@@ -18,6 +23,7 @@ class AdminWriteController extends AutoDisposeAsyncNotifier<void> {
     return result.when(
       success: (id) {
         state = const AsyncData(null);
+        _audit('create', collection, id, data.keys.toList());
         return id;
       },
       failure: (f) {
@@ -32,14 +38,34 @@ class AdminWriteController extends AutoDisposeAsyncNotifier<void> {
     state = const AsyncLoading();
     final result =
         await ref.read(adminRepositoryProvider).setDoc(collection, id, data);
-    return _reflect(result);
+    final ok = _reflect(result);
+    if (ok) _audit('update', collection, id, data.keys.toList());
+    return ok;
   }
 
   Future<bool> remove(String collection, String id) async {
     state = const AsyncLoading();
     final result =
         await ref.read(adminRepositoryProvider).deleteDoc(collection, id);
-    return _reflect(result);
+    final ok = _reflect(result);
+    if (ok) _audit('delete', collection, id, const []);
+    return ok;
+  }
+
+  /// Records one audit entry for the acting admin. Never throws.
+  void _audit(
+      String action, String module, String? targetId, List<String> fields) {
+    final actor = ref.read(userProfileProvider).valueOrNull;
+    if (actor == null) return;
+    // Fire-and-forget; audit must not affect the primary operation.
+    ref.read(adminRepositoryProvider).logAdminAction(
+          actorUid: actor.uid,
+          actorEmail: actor.email,
+          action: action,
+          module: module,
+          targetId: targetId,
+          fields: fields,
+        );
   }
 
   bool _reflect(Result<void> result) {

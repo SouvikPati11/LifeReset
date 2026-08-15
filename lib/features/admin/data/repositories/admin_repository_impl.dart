@@ -33,9 +33,25 @@ class AdminRepositoryImpl extends BaseRepository implements AdminRepository {
       guard(() => _remote.getProblemDistribution());
 
   @override
+  Future<Result<TrackingAnalytics>> getTrackingAnalytics() =>
+      guard(() => _remote.getTrackingAnalytics());
+
+  @override
+  Future<Result<ProgressAnalytics>> getProgressAnalytics() =>
+      guard(() => _remote.getProgressAnalytics());
+
+  @override
+  Future<Result<CoachAnalytics>> getCoachAnalytics() =>
+      guard(() => _remote.getCoachAnalytics());
+
+  @override
   Future<Result<AdminUsersPage>> fetchUsersPage(
           {DateTime? before, int limit = 15}) =>
       guard(() => _remote.fetchUsersPage(before: before, limit: limit));
+
+  @override
+  Future<Result<AdminUser?>> findUserByEmail(String email) =>
+      guard(() => _remote.findUserByEmail(email));
 
   @override
   Stream<List<ProgramItem>> watchPrograms() => _remote.watchPrograms();
@@ -56,6 +72,13 @@ class AdminRepositoryImpl extends BaseRepository implements AdminRepository {
   @override
   Stream<ContentPage> watchContentPage(String docId) =>
       _remote.watchContentPage(docId);
+
+  @override
+  Stream<List<AdminUser>> watchAdminUsers() => _remote.watchAdminUsers();
+
+  @override
+  Stream<List<AuditLogEntry>> watchAuditLogs({int limit = 100}) =>
+      _remote.watchAuditLogs(limit: limit);
 
   @override
   Stream<List<AdminNotificationItem>> watchNotifications() =>
@@ -88,4 +111,22 @@ class AdminRepositoryImpl extends BaseRepository implements AdminRepository {
   @override
   Future<Result<void>> deleteDoc(String collection, String id) =>
       guard(() => _remote.deleteDoc(collection, id));
+
+  @override
+  Future<Result<void>> logAdminAction({
+    required String actorUid,
+    required String actorEmail,
+    required String action,
+    required String module,
+    String? targetId,
+    List<String> fields = const [],
+  }) =>
+      guard(() => _remote.logAdminAction(
+            actorUid: actorUid,
+            actorEmail: actorEmail,
+            action: action,
+            module: module,
+            targetId: targetId,
+            fields: fields,
+          ));
 }

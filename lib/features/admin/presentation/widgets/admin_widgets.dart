@@ -97,6 +97,35 @@ class ACard extends StatelessWidget {
   }
 }
 
+/// A responsive grid of [MetricTile]s: 4-across on desktop, 2-up on tablet and
+/// mobile, with a fixed tile height so content never overflows at narrow
+/// widths. Shared by the Dashboard and every analytics view.
+class MetricGrid extends StatelessWidget {
+  const MetricGrid({super.key, required this.tiles, this.tileHeight = 168});
+
+  final List<Widget> tiles;
+  final double tileHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, c) {
+        final cols = c.maxWidth >= 900 ? 4 : 2;
+        final tileW = (c.maxWidth - (cols - 1) * AppSizes.md) / cols;
+        return GridView.count(
+          crossAxisCount: cols,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: AppSizes.md,
+          crossAxisSpacing: AppSizes.md,
+          childAspectRatio: tileW / tileHeight,
+          children: tiles,
+        );
+      },
+    );
+  }
+}
+
 /// A metric tile (icon, value, label, optional delta).
 class MetricTile extends StatelessWidget {
   const MetricTile({

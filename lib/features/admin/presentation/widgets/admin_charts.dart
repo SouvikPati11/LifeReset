@@ -106,6 +106,62 @@ class _LinePainter extends CustomPainter {
   bool shouldRepaint(_LinePainter old) => old.values != values;
 }
 
+/// A labelled horizontal bar list — each row shows a label, a proportional
+/// track and a trailing value. Used for read-only distributions (mood, score
+/// bands) where a donut would be too dense.
+class StatBars extends StatelessWidget {
+  const StatBars({super.key, required this.items});
+
+  /// (label, value, colour) rows.
+  final List<(String, int, Color)> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final max = items.fold<int>(0, (m, e) => e.$2 > m ? e.$2 : m);
+    if (items.isEmpty || max == 0) {
+      return Text('No data yet.', style: textTheme.bodySmall);
+    }
+    return Column(
+      children: [
+        for (final (label, value, color) in items)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 5),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 76,
+                  child: Text(label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.bodySmall),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: LinearProgressIndicator(
+                      value: value / max,
+                      minHeight: 10,
+                      backgroundColor: color.withValues(alpha: 0.12),
+                      valueColor: AlwaysStoppedAnimation<Color>(color),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 40,
+                  child: Text('$value',
+                      textAlign: TextAlign.right, style: textTheme.labelMedium),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 /// A two-segment donut (e.g. Free vs Premium) with a centered total.
 class AdminDonut extends StatelessWidget {
   const AdminDonut({

@@ -111,12 +111,12 @@ void main() {
     final db = await _seedDb();
     await _pump(t, _app(db), const Size(1440, 1000));
 
-    // Navigate to the read-only Problems stub via the sidebar.
+    // Navigate to the read-only Problems analytics via the sidebar.
     await t.tap(find.text('Problems'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 300));
 
-    expect(find.text('Problem Analytics'), findsOneWidget);
+    expect(find.text('Distribution by Problem'), findsOneWidget);
     expect(t.takeException(), isNull);
   });
 

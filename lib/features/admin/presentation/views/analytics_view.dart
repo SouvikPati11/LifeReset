@@ -21,14 +21,8 @@ class AnalyticsView extends ConsumerWidget {
       children: [
         Text('Analytics', style: textTheme.titleLarge),
         const SizedBox(height: AppSizes.md),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: AppSizes.md,
-          crossAxisSpacing: AppSizes.md,
-          childAspectRatio: 1.5,
-          children: [
+        MetricGrid(
+          tiles: [
             MetricTile(
               icon: Icons.today_rounded,
               value: '${analytics?.dailyActiveUsers ?? 0}',

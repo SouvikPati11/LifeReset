@@ -36,43 +36,28 @@ class DashboardView extends ConsumerWidget {
       children: [
         Text('Welcome back, Admin 👋', style: textTheme.headlineSmall),
         const SizedBox(height: AppSizes.md),
-        LayoutBuilder(
-          builder: (context, c) {
-            // 4-across on desktop, 2×2 on tablet/mobile, with a fixed tile
-            // height so content never overflows at narrow widths.
-            final cols = c.maxWidth >= 900 ? 4 : 2;
-            final tileW = (c.maxWidth - (cols - 1) * AppSizes.md) / cols;
-            const tileH = 156.0;
-            return GridView.count(
-              crossAxisCount: cols,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: AppSizes.md,
-              crossAxisSpacing: AppSizes.md,
-              childAspectRatio: tileW / tileH,
-              children: [
-                MetricTile(
-                    icon: Icons.people_alt_rounded,
-                    value: '${stats?.totalUsers ?? 0}',
-                    label: 'Total Users'),
-                MetricTile(
-                    icon: Icons.bolt_rounded,
-                    value: '${stats?.activeToday ?? 0}',
-                    label: 'Active Today',
-                    color: colorScheme.tertiary),
-                MetricTile(
-                    icon: Icons.person_add_alt_1_rounded,
-                    value: '${stats?.newSignups ?? 0}',
-                    label: 'New Signups',
-                    color: const Color(0xFF2E9E63)),
-                MetricTile(
-                    icon: Icons.workspace_premium_rounded,
-                    value: '${stats?.premiumUsers ?? 0}',
-                    label: 'Premium Users',
-                    color: const Color(0xFFE0A800)),
-              ],
-            );
-          },
+        MetricGrid(
+          tiles: [
+            MetricTile(
+                icon: Icons.people_alt_rounded,
+                value: '${stats?.totalUsers ?? 0}',
+                label: 'Total Users'),
+            MetricTile(
+                icon: Icons.bolt_rounded,
+                value: '${stats?.activeToday ?? 0}',
+                label: 'Active Today',
+                color: colorScheme.tertiary),
+            MetricTile(
+                icon: Icons.person_add_alt_1_rounded,
+                value: '${stats?.newSignups ?? 0}',
+                label: 'New Signups',
+                color: const Color(0xFF2E9E63)),
+            MetricTile(
+                icon: Icons.workspace_premium_rounded,
+                value: '${stats?.premiumUsers ?? 0}',
+                label: 'Premium Users',
+                color: const Color(0xFFE0A800)),
+          ],
         ),
         const SizedBox(height: AppSizes.md),
         ACard(

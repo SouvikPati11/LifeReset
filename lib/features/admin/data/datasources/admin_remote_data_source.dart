@@ -407,6 +407,191 @@ class AdminRemoteDataSource {
     }
   }
 
+  // ---- Daily Tracking analytics (read-only) ----
+
+  /// Mood value → (label, emoji), mirroring the Progress feature's scale.
+  static const Map<String, (String, String)> _moodScale = {
+    'great': ('Great', '😄'),
+    'good': ('Good', '🙂'),
+    'okay': ('Okay', '😐'),
+    'anxious': ('Anxious', '😰'),
+    'sad': ('Sad', '😢'),
+    'awful': ('Awful', '😣'),
+  };
+
+  Future<TrackingAnalytics> getTrackingAnalytics() async {
+    try {
+      final moods = _db.collectionGroup('mood_history');
+      final weekAgo = _startOfToday.subtract(const Duration(days: 7));
+      final results = await Future.wait([
+        _count(moods),
+        _count(moods.where('date',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(_startOfToday))),
+        _count(moods.where('date',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(weekAgo))),
+      ]);
+      final perMood = await Future.wait([
+        for (final key in _moodScale.keys)
+          _count(moods.where('mood', isEqualTo: key)),
+      ]);
+      final keys = _moodScale.keys.toList();
+      return TrackingAnalytics(
+        totalCheckIns: results[0],
+        checkInsToday: results[1],
+        checkIns7d: results[2],
+        moods: [
+          for (var i = 0; i < keys.length; i++)
+            MoodSlice(
+              key: keys[i],
+              label: _moodScale[keys[i]]!.$1,
+              emoji: _moodScale[keys[i]]!.$2,
+              count: perMood[i],
+            ),
+        ],
+      );
+    } on FirebaseException catch (e) {
+      throw ServerException(e.message ?? 'Failed to load tracking analytics.',
+          code: e.code);
+    }
+  }
+
+  // ---- Progress analytics (read-only) ----
+
+  Future<ProgressAnalytics> getProgressAnalytics() async {
+    try {
+      // Recovery-score bands mirror the app's onboarding/score tiers.
+      const bands = <(String, int, int)>[
+        ('0–59', 0, 60),
+        ('60–74', 60, 75),
+        ('75–86', 75, 87),
+        ('87–100', 87, 101),
+      ];
+      final bandCounts = await Future.wait([
+        for (final b in bands)
+          _count(_users
+              .where('recoveryScore', isGreaterThanOrEqualTo: b.$2)
+              .where('recoveryScore', isLessThan: b.$3)),
+      ]);
+      final journal = await _count(_db.collectionGroup('journal_entries'));
+      final avgScore = await _users.aggregate(average('recoveryScore')).get();
+      final avgStreak = await _users.aggregate(average('streak')).get();
+      final avgDay = await _users.aggregate(average('currentDay')).get();
+      return ProgressAnalytics(
+        averageRecoveryScore: avgScore.getAverage('recoveryScore') ?? 0,
+        averageStreak: avgStreak.getAverage('streak') ?? 0,
+        averageDay: avgDay.getAverage('currentDay') ?? 0,
+        journalEntries: journal,
+        scoreBuckets: [
+          for (var i = 0; i < bands.length; i++)
+            ScoreBucket(label: bands[i].$1, count: bandCounts[i]),
+        ],
+      );
+    } on FirebaseException catch (e) {
+      throw ServerException(e.message ?? 'Failed to load progress analytics.',
+          code: e.code);
+    }
+  }
+
+  // ---- AI Coach usage analytics (read-only, privacy-preserving) ----
+
+  Future<CoachAnalytics> getCoachAnalytics() async {
+    try {
+      final convos = _db.collectionGroup('ai_conversations');
+      final now = DateTime.now();
+      final ms7 = now.subtract(const Duration(days: 7)).millisecondsSinceEpoch;
+      final ms30 = now.subtract(const Duration(days: 30)).millisecondsSinceEpoch;
+      final results = await Future.wait([
+        _count(convos),
+        _count(convos.where('createdAtMs', isGreaterThanOrEqualTo: ms7)),
+        _count(convos.where('createdAtMs', isGreaterThanOrEqualTo: ms30)),
+        _count(_users),
+      ]);
+      return CoachAnalytics(
+        totalConversations: results[0],
+        conversations7d: results[1],
+        conversations30d: results[2],
+        totalUsers: results[3],
+      );
+    } on FirebaseException catch (e) {
+      throw ServerException(e.message ?? 'Failed to load coach analytics.',
+          code: e.code);
+    }
+  }
+
+  // ---- Admin Users ----
+
+  /// Looks up a single account by exact email (for granting admin access).
+  Future<AdminUser?> findUserByEmail(String email) async {
+    try {
+      final snap =
+          await _users.where('email', isEqualTo: email.trim()).limit(1).get();
+      if (snap.docs.isEmpty) return null;
+      return _adminUser(snap.docs.first);
+    } on FirebaseException catch (e) {
+      throw ServerException(e.message ?? 'Failed to look up user.', code: e.code);
+    }
+  }
+
+  /// Streams accounts whose server-side role is `admin`.
+  Stream<List<AdminUser>> watchAdminUsers() {
+    return _users.where('role', isEqualTo: 'admin').snapshots().map((s) {
+      final list = s.docs.map(_adminUser).toList();
+      list.sort((a, b) => a.email.toLowerCase().compareTo(b.email.toLowerCase()));
+      return list;
+    });
+  }
+
+  // ---- Audit logs (append-only) ----
+
+  Stream<List<AuditLogEntry>> watchAuditLogs({int limit = 100}) {
+    return _c('audit_logs')
+        .orderBy('timestamp', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((s) => s.docs.map((d) {
+              final data = d.data();
+              return AuditLogEntry(
+                id: d.id,
+                actorUid: (data['actorUid'] as String?) ?? '',
+                actorEmail: (data['actorEmail'] as String?) ?? '',
+                action: (data['action'] as String?) ?? '',
+                module: (data['module'] as String?) ?? '',
+                targetId: (data['targetId'] as String?) ?? '',
+                fields: (data['fields'] as List<dynamic>?)
+                        ?.map((e) => e.toString())
+                        .toList() ??
+                    const [],
+                timestamp: (data['timestamp'] as Timestamp?)?.toDate(),
+              );
+            }).toList());
+  }
+
+  /// Appends one entry to the admin audit trail. Append-only: the Firestore
+  /// rules permit admin create + read but deny update/delete.
+  Future<void> logAdminAction({
+    required String actorUid,
+    required String actorEmail,
+    required String action,
+    required String module,
+    String? targetId,
+    List<String> fields = const [],
+  }) async {
+    try {
+      await _c('audit_logs').add({
+        'actorUid': actorUid,
+        'actorEmail': actorEmail,
+        'action': action,
+        'module': module,
+        if (targetId != null) 'targetId': targetId,
+        'fields': fields,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } on FirebaseException catch (e) {
+      throw ServerException(e.message ?? 'Failed to write audit log.',
+          code: e.code);
+    }
+  }
+
   // ---- Generic writes ----
 
   Future<String> createDoc(String collection, Map<String, dynamic> data) async {
