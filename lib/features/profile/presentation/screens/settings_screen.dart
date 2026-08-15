@@ -6,7 +6,10 @@ import '../../../../core/localization/locale_controller.dart';
 import '../../../../shared/widgets/ls_kit.dart';
 import '../../../authentication/presentation/controllers/auth_controller.dart';
 import '../../../home/presentation/widgets/home_style.dart';
-import '../../../../theme/theme_controller.dart';
+import '../../../support/presentation/screens/contact_support_screen.dart';
+import '../../../support/presentation/screens/faq_screen.dart';
+import '../../../support/presentation/screens/help_center_screen.dart';
+import '../../../support/presentation/screens/terms_screen.dart';
 import '../../domain/entities/user_profile.dart';
 import '../controllers/profile_controller.dart';
 import '../providers/profile_providers.dart';
@@ -14,40 +17,43 @@ import 'profile_placeholder_screen.dart';
 
 /// Settings & Support: functional settings (saved to Firestore and applied to
 /// the app), support links, and secure logout.
-class SettingsScreen extends ConsumerWidget {
+///
+/// Appearance is fixed to **Light** — the picker is intentionally removed and a
+/// stored `system`/`dark` value is migrated to `light` on open.
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
-  static const Map<String, String> _languages = {'en': 'English', 'es': 'Español'};
+  @override
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
 
-  ProfileController _controller(WidgetRef ref) =>
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  static const Map<String, String> _languages = {'en': 'English', 'es': 'Español'};
+  bool _migrated = false;
+
+  ProfileController _controller() =>
       ref.read(profileControllerProvider.notifier);
 
-  Future<void> _pickAppearance(BuildContext context, WidgetRef ref) async {
-    final choice = await _pickOption<AppearanceMode>(
-      context,
-      title: 'App Appearance',
-      options: [
-        for (final mode in AppearanceMode.values) (mode, mode.label),
-      ],
-    );
-    if (choice == null) return;
-    ref.read(themeControllerProvider.notifier).setThemeMode(_themeMode(choice));
-    await _controller(ref).updateSettings(appearance: choice);
+  /// Reset a legacy `system`/`dark` appearance preference to `light`, once.
+  void _migrateAppearance(UserProfile? profile) {
+    if (_migrated || profile == null) return;
+    if (profile.appearance != AppearanceMode.light) {
+      _migrated = true;
+      _controller().updateSettings(appearance: AppearanceMode.light);
+    }
   }
 
-  Future<void> _pickLanguage(BuildContext context, WidgetRef ref) async {
+  Future<void> _pickLanguage() async {
     final choice = await _pickOption<String>(
-      context,
       title: 'Language',
       options: [for (final e in _languages.entries) (e.key, e.value)],
     );
     if (choice == null) return;
     ref.read(localeControllerProvider.notifier).setLocale(Locale(choice));
-    await _controller(ref).updateSettings(language: choice);
+    await _controller().updateSettings(language: choice);
   }
 
-  Future<T?> _pickOption<T>(
-    BuildContext context, {
+  Future<T?> _pickOption<T>({
     required String title,
     required List<(T, String)> options,
   }) {
@@ -88,18 +94,7 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  ThemeMode _themeMode(AppearanceMode mode) {
-    switch (mode) {
-      case AppearanceMode.light:
-        return ThemeMode.light;
-      case AppearanceMode.dark:
-        return ThemeMode.dark;
-      case AppearanceMode.system:
-        return ThemeMode.system;
-    }
-  }
-
-  Future<void> _logout(BuildContext context, WidgetRef ref) async {
+  Future<void> _logout() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -126,15 +121,20 @@ class SettingsScreen extends ConsumerWidget {
     await ref.read(authControllerProvider.notifier).signOut();
   }
 
-  void _push(BuildContext context, String title) {
+  void _open(Widget screen) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+  }
+
+  void _pushPlaceholder(String title) {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => ProfilePlaceholderScreen(title: title)),
     );
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final profile = ref.watch(profileProvider).valueOrNull;
+    _migrateAppearance(profile);
     final langLabel = _languages[profile?.language] ?? 'English';
 
     return Scaffold(
@@ -163,22 +163,28 @@ class SettingsScreen extends ConsumerWidget {
                         showChevron: false,
                         trailing: _Toggle(
                           value: profile?.notificationsEnabled ?? true,
-                          onChanged: (v) => _controller(ref)
+                          onChanged: (v) => _controller()
                               .updateSettings(notificationsEnabled: v),
                         ),
                       ),
-                      LsRow(
+                      const LsRow(
                         icon: Icons.brightness_6_outlined,
                         title: 'App Appearance',
-                        trailing: _ValueChevron(
-                            profile?.appearance.label ?? 'System'),
-                        onTap: () => _pickAppearance(context, ref),
+                        showChevron: false,
+                        trailing: Text(
+                          'Light',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: HomeStyle.inkSoft,
+                          ),
+                        ),
                       ),
                       LsRow(
                         icon: Icons.language_rounded,
                         title: 'Language',
                         trailing: _ValueChevron(langLabel),
-                        onTap: () => _pickLanguage(context, ref),
+                        onTap: _pickLanguage,
                       ),
                       LsRow(
                         icon: Icons.alarm_rounded,
@@ -186,7 +192,7 @@ class SettingsScreen extends ConsumerWidget {
                         showChevron: false,
                         trailing: _Toggle(
                           value: profile?.remindersEnabled ?? false,
-                          onChanged: (v) => _controller(ref)
+                          onChanged: (v) => _controller()
                               .updateSettings(remindersEnabled: v),
                         ),
                       ),
@@ -199,17 +205,17 @@ class SettingsScreen extends ConsumerWidget {
                       LsRow(
                         icon: Icons.help_outline_rounded,
                         title: 'Help Center',
-                        onTap: () => _push(context, 'Help Center'),
+                        onTap: () => _open(const HelpCenterScreen()),
                       ),
                       LsRow(
                         icon: Icons.mail_outline_rounded,
                         title: 'Contact Support',
-                        onTap: () => _push(context, 'Contact Support'),
+                        onTap: () => _open(const ContactSupportScreen()),
                       ),
                       LsRow(
                         icon: Icons.forum_outlined,
                         title: 'FAQs',
-                        onTap: () => _push(context, 'FAQs'),
+                        onTap: () => _open(const FaqScreen()),
                       ),
                     ],
                   ),
@@ -220,17 +226,17 @@ class SettingsScreen extends ConsumerWidget {
                       LsRow(
                         icon: Icons.description_outlined,
                         title: 'Terms of Service',
-                        onTap: () => _push(context, 'Terms of Service'),
+                        onTap: () => _open(const TermsScreen()),
                       ),
                       LsRow(
                         icon: Icons.privacy_tip_outlined,
                         title: 'Privacy Policy',
-                        onTap: () => _push(context, 'Privacy Policy'),
+                        onTap: () => _pushPlaceholder('Privacy Policy'),
                       ),
                     ],
                   ),
                   const SizedBox(height: AppSizes.lg),
-                  _LogoutButton(onTap: () => _logout(context, ref)),
+                  _LogoutButton(onTap: _logout),
                 ],
               ),
             ),

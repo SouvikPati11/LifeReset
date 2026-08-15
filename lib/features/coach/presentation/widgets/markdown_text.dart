@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../../../home/presentation/widgets/home_style.dart';
+
 /// A minimal Markdown renderer for AI messages.
 ///
 /// Supports the subset the coach uses — paragraphs, blank-line spacing, bullet
 /// lists (`- `, `* `, `• `) and inline bold (`**text**`) — without pulling in an
 /// external package.
+///
+/// The rendered text is wrapped in a [DefaultTextStyle] built from [style], so
+/// every glyph (including inline spans) uses the intended readable colour and
+/// can never fall back to the ambient near-black default.
 class MarkdownText extends StatelessWidget {
   const MarkdownText({super.key, required this.data, this.style});
 
@@ -13,7 +19,10 @@ class MarkdownText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final base = style ?? Theme.of(context).textTheme.bodyMedium!;
+    // Default to the app's primary ink colour (never a bare theme fallback that
+    // could render pure black on the light bubble).
+    final base = style ??
+        const TextStyle(color: HomeStyle.ink, fontSize: 14.5, height: 1.45);
     final blocks = <Widget>[];
 
     for (final rawLine in data.split('\n')) {
@@ -53,9 +62,12 @@ class MarkdownText extends StatelessWidget {
       }
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: blocks,
+    return DefaultTextStyle.merge(
+      style: base,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: blocks,
+      ),
     );
   }
 

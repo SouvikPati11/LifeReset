@@ -32,7 +32,7 @@ const _user = AuthUser(id: 'u1', email: 'alex@example.com', isEmailVerified: tru
 UserProfile _profile() => UserProfile(
       uid: 'u1', name: 'Alex Morgan', email: 'alex@example.com',
       plan: SubscriptionPlan.free, trialStatus: TrialStatus.active,
-      appearance: AppearanceMode.system, language: 'en',
+      appearance: AppearanceMode.light, language: 'en',
       notificationsEnabled: true, remindersEnabled: false,
       recoveryScore: 68, currentDay: 12, streak: 4, completedTasks: 23,
       trialEndDate: DateTime.now().add(const Duration(days: 4)),

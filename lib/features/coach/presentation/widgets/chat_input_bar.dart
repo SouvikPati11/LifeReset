@@ -98,8 +98,13 @@ class _ChatInputBarState extends State<ChatInputBar> {
                   cursorColor: HomeStyle.primary,
                   decoration: const InputDecoration(
                     isDense: true,
+                    // The white pill container is the background; never let the
+                    // global filled InputDecorationTheme paint over it.
+                    filled: false,
                     contentPadding: EdgeInsets.symmetric(vertical: 12),
                     border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
                     hintText: 'Message AI Coach…',
                     hintStyle: TextStyle(color: HomeStyle.inkSoft, fontSize: 14.5),
                   ),

@@ -326,8 +326,13 @@ class _Input extends StatelessWidget {
         cursorColor: HomeStyle.primary,
         decoration: InputDecoration(
           isDense: true,
+          // The white field container is the background; disable the global
+          // filled InputDecorationTheme so it never paints a grey/dark fill.
+          filled: false,
           contentPadding: const EdgeInsets.symmetric(vertical: 14),
           border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
           hintText: hint,
           hintStyle: const TextStyle(color: HomeStyle.inkSoft, fontSize: 14.5),
         ),

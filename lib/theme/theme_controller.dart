@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Holds the user's selected [ThemeMode].
+/// Holds the app's [ThemeMode].
 ///
-/// Defaults to [ThemeMode.system]. Persistence (reading/writing the choice from
-/// local storage) will be wired in once the storage service is implemented;
-/// the controller API is intentionally stable so that change is transparent to
-/// the UI.
+/// LifeReset ships as a **Light-only** experience: the app never follows the
+/// device's system dark mode and exposes no dark/system switch. The mode is
+/// therefore pinned to [ThemeMode.light]; [setThemeMode] is retained as a
+/// no-op so existing callers stay valid but can never move the app off Light.
 class ThemeController extends Notifier<ThemeMode> {
   @override
-  ThemeMode build() => ThemeMode.system;
+  ThemeMode build() => ThemeMode.light;
 
-  void setThemeMode(ThemeMode mode) => state = mode;
-
-  void toggle() {
-    state = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-  }
+  /// Intentionally a no-op — appearance is fixed to Light.
+  void setThemeMode(ThemeMode mode) {}
 }
 
 final themeControllerProvider =

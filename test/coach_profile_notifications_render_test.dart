@@ -36,7 +36,7 @@ UserProfile _profile() => UserProfile(
       email: 'alex@example.com',
       plan: SubscriptionPlan.free,
       trialStatus: TrialStatus.active,
-      appearance: AppearanceMode.system,
+      appearance: AppearanceMode.light,
       language: 'en',
       notificationsEnabled: true,
       remindersEnabled: false,

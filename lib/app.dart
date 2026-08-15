@@ -35,9 +35,11 @@ class LifeResetApp extends ConsumerWidget {
       builder: (context, child) =>
           NotificationsInitializer(child: child ?? const SizedBox.shrink()),
 
-      // Theming (Material 3).
+      // Theming (Material 3). LifeReset is Light-only: the mode is pinned to
+      // light (see ThemeController) and darkTheme is also the light theme, so
+      // the app never renders dark even if the device is in dark mode.
       theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
+      darkTheme: AppTheme.light,
       themeMode: themeMode,
 
       // Localization.
