@@ -38,10 +38,17 @@ class AdminLineChart extends StatelessWidget {
           if (labels.isNotEmpty) ...[
             const SizedBox(height: 4),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 for (final l in labels)
-                  Text(l, style: textTheme.labelSmall),
+                  Expanded(
+                    child: Text(
+                      l,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.labelSmall,
+                    ),
+                  ),
               ],
             ),
           ],

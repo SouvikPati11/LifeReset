@@ -29,6 +29,10 @@ class AdminRepositoryImpl extends BaseRepository implements AdminRepository {
       guard(() => _remote.getSystemStatus());
 
   @override
+  Future<Result<List<ProblemDistribution>>> getProblemDistribution() =>
+      guard(() => _remote.getProblemDistribution());
+
+  @override
   Future<Result<AdminUsersPage>> fetchUsersPage(
           {DateTime? before, int limit = 15}) =>
       guard(() => _remote.fetchUsersPage(before: before, limit: limit));
@@ -45,6 +49,13 @@ class AdminRepositoryImpl extends BaseRepository implements AdminRepository {
 
   @override
   Stream<List<QuoteItem>> watchQuotes() => _remote.watchQuotes();
+
+  @override
+  Stream<List<FaqItem>> watchFaqs() => _remote.watchFaqs();
+
+  @override
+  Stream<ContentPage> watchContentPage(String docId) =>
+      _remote.watchContentPage(docId);
 
   @override
   Stream<List<AdminNotificationItem>> watchNotifications() =>

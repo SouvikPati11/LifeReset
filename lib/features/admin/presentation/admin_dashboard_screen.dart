@@ -4,45 +4,88 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../authentication/presentation/controllers/auth_controller.dart';
 import '../../authentication/presentation/providers/user_providers.dart';
+import 'views/admin_users_view.dart';
 import 'views/analytics_view.dart';
+import 'views/content_pages_view.dart';
 import 'views/dashboard_view.dart';
 import 'views/daily_tasks_view.dart';
+import 'views/faqs_view.dart';
 import 'views/notifications_view.dart';
+import 'views/problems_view.dart';
 import 'views/programs_view.dart';
 import 'views/prompts_view.dart';
 import 'views/quotes_view.dart';
 import 'views/reports_view.dart';
+import 'views/roles_permissions_view.dart';
 import 'views/settings_view.dart';
 import 'views/subscriptions_view.dart';
+import 'views/system_logs_view.dart';
 import 'views/users_view.dart';
+import 'widgets/admin_shell.dart';
+import 'widgets/admin_style.dart';
 
-/// A single admin section entry (drawer label, icon and screen).
-class _AdminSection {
-  const _AdminSection(this.title, this.icon, this.builder);
-  final String title;
-  final IconData icon;
-  final Widget Function() builder;
-}
+/// The grouped admin navigation, matching the SaaS sidebar layout.
+final List<AdminNavGroup> _groups = [
+  const AdminNavGroup(null, [
+    AdminNavItem('Dashboard', Icons.dashboard_rounded, DashboardView.new,
+        subtitle: "Here's what's happening with LifeReset today."),
+  ]),
+  const AdminNavGroup('MANAGEMENT', [
+    AdminNavItem('Users', Icons.people_alt_rounded, UsersView.new,
+        subtitle: 'Browse and manage user accounts.'),
+    AdminNavItem('Problems', Icons.category_rounded, ProblemsView.new,
+        subtitle: 'Recovery-area distribution (read-only).'),
+    AdminNavItem('AI Habit Plans', Icons.self_improvement_rounded,
+        ProgramsView.new,
+        subtitle: 'Recovery programs and their daily plans.'),
+    AdminNavItem('Daily Tasks', Icons.checklist_rounded, DailyTasksView.new,
+        subtitle: 'Per-day tasks inside each plan.'),
+    AdminNavItem('Journal Prompts', Icons.edit_note_rounded, PromptsView.new,
+        subtitle: 'Reflective prompts for journaling.'),
+    AdminNavItem('Daily Quotes', Icons.format_quote_rounded, QuotesView.new,
+        subtitle: 'Motivational quotes shown to users.'),
+    AdminNavItem('Notifications', Icons.notifications_rounded,
+        NotificationsView.new,
+        subtitle: 'Scheduled and broadcast messages.'),
+    AdminNavItem('Analytics', Icons.insights_rounded, AnalyticsView.new,
+        subtitle: 'Engagement and usage metrics.'),
+    AdminNavItem('Subscriptions', Icons.workspace_premium_rounded,
+        SubscriptionsView.new,
+        subtitle: 'Plans, trials and revenue.'),
+    AdminNavItem('Reports', Icons.assessment_rounded, ReportsView.new,
+        subtitle: 'Exportable summaries.'),
+  ]),
+  const AdminNavGroup('CONTENT', [
+    AdminNavItem('FAQs', Icons.quiz_rounded, FaqsView.new,
+        subtitle: 'Help Center questions and answers.'),
+    AdminNavItem('Content Pages', Icons.article_rounded, ContentPagesView.new,
+        subtitle: 'Terms of Service and Help Center.'),
+  ]),
+  const AdminNavGroup('SETTINGS', [
+    AdminNavItem('App Settings', Icons.settings_rounded, SettingsView.new,
+        subtitle: 'General configuration and support info.'),
+    AdminNavItem('Admin Users', Icons.admin_panel_settings_rounded,
+        AdminUsersView.new,
+        subtitle: 'Manage administrator access.'),
+    AdminNavItem('Roles & Permissions', Icons.key_rounded,
+        RolesPermissionsView.new,
+        subtitle: 'Role-based access control.'),
+    AdminNavItem('System Logs', Icons.receipt_long_rounded, SystemLogsView.new,
+        subtitle: 'Audit trail of admin actions.'),
+  ]),
+];
 
-const List<_AdminSection> _sections = [
-  _AdminSection('Dashboard', Icons.dashboard_rounded, DashboardView.new),
-  _AdminSection('Users', Icons.people_alt_rounded, UsersView.new),
-  _AdminSection('Programs', Icons.self_improvement_rounded, ProgramsView.new),
-  _AdminSection('Daily Tasks', Icons.checklist_rounded, DailyTasksView.new),
-  _AdminSection('Journal Prompts', Icons.edit_note_rounded, PromptsView.new),
-  _AdminSection('Daily Quotes', Icons.format_quote_rounded, QuotesView.new),
-  _AdminSection('Notifications', Icons.notifications_rounded, NotificationsView.new),
-  _AdminSection('Analytics', Icons.insights_rounded, AnalyticsView.new),
-  _AdminSection('Subscriptions', Icons.workspace_premium_rounded, SubscriptionsView.new),
-  _AdminSection('Reports', Icons.assessment_rounded, ReportsView.new),
-  _AdminSection('Settings', Icons.settings_rounded, SettingsView.new),
+/// A flat, index-addressable view of every section across the groups.
+final List<AdminNavItem> _flat = [
+  for (final g in _groups) ...g.items,
 ];
 
 /// Admin Panel entry point and navigation shell.
 ///
 /// Reached only when the signed-in user's server-side role resolves to
-/// `admin` (enforced by the route guard). Hosts every admin section behind a
-/// drawer; the selected section is rendered in the body.
+/// `admin` (enforced by the route guard). A responsive purple SaaS shell:
+/// a permanent sidebar on desktop, an icon rail on tablet, and a drawer on
+/// mobile. Every section still renders through its existing view.
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
 
@@ -54,82 +97,84 @@ class AdminDashboardScreen extends ConsumerStatefulWidget {
 class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   int _index = 0;
 
-  void _select(int i) {
-    setState(() => _index = i);
-    Navigator.pop(context); // close the drawer
-  }
+  void _signOut() => ref.read(authControllerProvider.notifier).signOut();
 
   @override
   Widget build(BuildContext context) {
-    final section = _sections[_index];
-    final profile = ref.watch(userProfileProvider).valueOrNull;
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final item = _flat[_index];
+    final email = ref.watch(userProfileProvider).valueOrNull?.email ?? '';
 
-    return Scaffold(
-      appBar: AppBar(title: Text(section.title)),
-      drawer: Drawer(
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(AppSizes.md),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: colorScheme.primaryContainer,
-                      child: Icon(Icons.shield_rounded,
-                          color: colorScheme.onPrimaryContainer),
+    return Theme(
+      data: AdminStyle.theme(),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final w = constraints.maxWidth;
+          final isDesktop = w >= AppSizes.tabletBreakpoint;
+          final isTablet =
+              w >= AppSizes.mobileBreakpoint && w < AppSizes.tabletBreakpoint;
+          final hasDrawer = !isDesktop; // mobile + tablet
+
+          final drawer = hasDrawer
+              ? Drawer(
+                  backgroundColor: AdminStyle.sidebarBg,
+                  child: SafeArea(
+                    child: AdminSidebar(
+                      groups: _groups,
+                      selected: _index,
+                      email: email,
+                      onSelect: (i) {
+                        setState(() => _index = i);
+                        Navigator.pop(context);
+                      },
+                      onSignOut: _signOut,
                     ),
-                    const SizedBox(width: AppSizes.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Administrator', style: textTheme.titleMedium),
-                          Text(
-                            profile?.email ?? '',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
+                  ),
+                )
+              : null;
+
+          return Scaffold(
+            backgroundColor: AdminStyle.canvas,
+            drawer: drawer,
+            body: SafeArea(
+              child: Row(
+                children: [
+                  if (isDesktop)
+                    AdminSidebar(
+                      groups: _groups,
+                      selected: _index,
+                      email: email,
+                      onSelect: (i) => setState(() => _index = i),
+                      onSignOut: _signOut,
+                    ),
+                  if (isTablet)
+                    AdminRail(
+                      groups: _groups,
+                      selected: _index,
+                      onSelect: (i) => setState(() => _index = i),
+                      onSignOut: _signOut,
+                    ),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Builder(
+                          builder: (context) => AdminTopBar(
+                            title: item.title,
+                            subtitle: item.subtitle,
+                            onMenu: hasDrawer
+                                ? () => Scaffold.of(context).openDrawer()
+                                : null,
                           ),
-                        ],
-                      ),
+                        ),
+                        Expanded(child: item.builder()),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const Divider(height: 1),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
-                  children: [
-                    for (var i = 0; i < _sections.length; i++)
-                      ListTile(
-                        leading: Icon(_sections[i].icon),
-                        title: Text(_sections[i].title),
-                        selected: i == _index,
-                        selectedTileColor:
-                            colorScheme.primaryContainer.withValues(alpha: 0.3),
-                        onTap: () => _select(i),
-                      ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.logout_rounded),
-                title: const Text('Sign out'),
-                onTap: () =>
-                    ref.read(authControllerProvider.notifier).signOut(),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
-      body: SafeArea(child: section.builder()),
     );
   }
 }

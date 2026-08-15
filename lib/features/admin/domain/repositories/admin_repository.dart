@@ -18,6 +18,7 @@ abstract interface class AdminRepository {
   Future<Result<List<AdminUser>>> getRecentUsers({int limit});
   Future<Result<List<TopProgram>>> getTopPrograms({int limit});
   Future<Result<List<SystemService>>> getSystemStatus();
+  Future<Result<List<ProblemDistribution>>> getProblemDistribution();
 
   // Users (paginated).
   Future<Result<AdminUsersPage>> fetchUsersPage({DateTime? before, int limit});
@@ -27,6 +28,8 @@ abstract interface class AdminRepository {
   Stream<List<ProgramTaskItem>> watchTasks(String programId);
   Stream<List<PromptItem>> watchPrompts();
   Stream<List<QuoteItem>> watchQuotes();
+  Stream<List<FaqItem>> watchFaqs();
+  Stream<ContentPage> watchContentPage(String docId);
   Stream<List<AdminNotificationItem>> watchNotifications();
   Stream<List<TransactionItem>> watchTransactions();
   Stream<AppSettings> watchSettings();

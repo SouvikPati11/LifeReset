@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/constants/content_keys.dart';
 import '../../../../shared/widgets/loading_view.dart';
 import '../../domain/entities/admin_models.dart';
 import '../controllers/admin_controllers.dart';
@@ -45,6 +46,10 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
       TextEditingController(text: widget.settings.defaultLanguage);
   late final _support =
       TextEditingController(text: widget.settings.supportEmail);
+  late final _supportPhone =
+      TextEditingController(text: widget.settings.supportPhone);
+  late final _supportMessage =
+      TextEditingController(text: widget.settings.supportMessage);
   late final _privacy = TextEditingController(text: widget.settings.privacyUrl);
   late final _terms = TextEditingController(text: widget.settings.termsUrl);
   late bool _maintenance = widget.settings.maintenanceMode;
@@ -54,6 +59,8 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
     _version.dispose();
     _language.dispose();
     _support.dispose();
+    _supportPhone.dispose();
+    _supportMessage.dispose();
     _privacy.dispose();
     _terms.dispose();
     super.dispose();
@@ -67,7 +74,9 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
         'appVersion': _version.text.trim(),
         'maintenanceMode': _maintenance,
         'defaultLanguage': _language.text.trim(),
-        'supportEmail': _support.text.trim(),
+        ContentKeys.supportEmail: _support.text.trim(),
+        ContentKeys.supportPhone: _supportPhone.text.trim(),
+        ContentKeys.supportMessage: _supportMessage.text.trim(),
         'privacyUrl': _privacy.text.trim(),
         'termsUrl': _terms.text.trim(),
       },
@@ -96,6 +105,8 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
           _field(_version, 'App Version'),
           _field(_language, 'Default Language'),
           _field(_support, 'Support Email'),
+          _field(_supportPhone, 'Support Phone'),
+          _field(_supportMessage, 'Support Message / Instructions'),
           _field(_privacy, 'Privacy Policy URL'),
           _field(_terms, 'Terms of Service URL'),
           SwitchListTile(

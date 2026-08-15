@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../home/presentation/widgets/home_style.dart';
 
 /// Parses a `#RRGGBB` hex string to a [Color] (falls back to a violet).
 Color hexColor(String hex) {
@@ -83,6 +84,7 @@ class ACard extends StatelessWidget {
         color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
         border: Border.all(color: colorScheme.outlineVariant),
+        boxShadow: HomeStyle.softShadow,
       ),
       child: child,
     );

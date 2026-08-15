@@ -40,6 +40,13 @@ final systemStatusProvider = FutureProvider<List<SystemService>>((ref) async {
   return r.when(success: (s) => s, failure: (_) => const []);
 });
 
+/// Users grouped by onboarding recovery area (read-only Dashboard donut).
+final problemDistributionProvider =
+    FutureProvider<List<ProblemDistribution>>((ref) async {
+  final r = await ref.watch(adminRepositoryProvider).getProblemDistribution();
+  return r.when(success: (d) => d, failure: (_) => const []);
+});
+
 // Content streams.
 final programsProvider = StreamProvider<List<ProgramItem>>(
     (ref) => ref.watch(adminRepositoryProvider).watchPrograms());
@@ -53,6 +60,13 @@ final promptsProvider = StreamProvider<List<PromptItem>>(
 
 final quotesProvider = StreamProvider<List<QuoteItem>>(
     (ref) => ref.watch(adminRepositoryProvider).watchQuotes());
+
+final faqsAdminProvider = StreamProvider<List<FaqItem>>(
+    (ref) => ref.watch(adminRepositoryProvider).watchFaqs());
+
+/// An admin-editable content page (Terms of Service, Help Center) by doc id.
+final contentPageProvider = StreamProvider.family<ContentPage, String>(
+    (ref, docId) => ref.watch(adminRepositoryProvider).watchContentPage(docId));
 
 final adminNotificationsProvider = StreamProvider<List<AdminNotificationItem>>(
     (ref) => ref.watch(adminRepositoryProvider).watchNotifications());

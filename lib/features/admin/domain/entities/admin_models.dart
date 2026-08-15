@@ -104,6 +104,21 @@ class ActivityPoint {
   final int count;
 }
 
+/// The number of users onboarded into a given recovery area (`users/{uid}.
+/// problem`). A read-only projection over the fixed onboarding problem enum —
+/// no collection is created and the enum is never mutated.
+class ProblemDistribution {
+  const ProblemDistribution({
+    required this.problemKey,
+    required this.label,
+    required this.count,
+  });
+
+  final String problemKey;
+  final String label;
+  final int count;
+}
+
 class TopProgram {
   const TopProgram({required this.name, required this.userCount, required this.iconKey});
   final String name;
@@ -222,6 +237,34 @@ class QuoteItem {
   final ContentStatus status;
 }
 
+/// A Help Center FAQ entry, managed from the Admin Panel (`faqs` collection).
+class FaqItem {
+  const FaqItem({
+    required this.id,
+    required this.question,
+    required this.answer,
+    required this.order,
+    required this.status,
+  });
+
+  final String id;
+  final String question;
+  final String answer;
+  final int order;
+  final ContentStatus status;
+}
+
+/// An admin-editable long-form content page (Terms of Service, Help Center),
+/// stored as a single Firestore document (e.g. `app_config/terms`).
+class ContentPage {
+  const ContentPage({required this.title, required this.body});
+
+  final String title;
+  final String body;
+
+  factory ContentPage.empty() => const ContentPage(title: '', body: '');
+}
+
 class AdminNotificationItem {
   const AdminNotificationItem({
     required this.id,
@@ -315,6 +358,8 @@ class AppSettings {
     required this.maintenanceMode,
     required this.defaultLanguage,
     required this.supportEmail,
+    required this.supportPhone,
+    required this.supportMessage,
     required this.privacyUrl,
     required this.termsUrl,
   });
@@ -323,6 +368,8 @@ class AppSettings {
   final bool maintenanceMode;
   final String defaultLanguage;
   final String supportEmail;
+  final String supportPhone;
+  final String supportMessage;
   final String privacyUrl;
   final String termsUrl;
 
@@ -331,6 +378,8 @@ class AppSettings {
         maintenanceMode: false,
         defaultLanguage: 'en',
         supportEmail: '',
+        supportPhone: '',
+        supportMessage: '',
         privacyUrl: '',
         termsUrl: '',
       );

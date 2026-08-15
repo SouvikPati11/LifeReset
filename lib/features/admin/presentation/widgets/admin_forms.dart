@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/constants/content_keys.dart';
 import '../../domain/entities/admin_models.dart';
 import '../controllers/admin_controllers.dart';
 import 'admin_widgets.dart';
@@ -23,6 +24,9 @@ Future<void> showPromptForm(BuildContext context, {PromptItem? existing}) =>
 
 Future<void> showQuoteForm(BuildContext context, {QuoteItem? existing}) =>
     _show(context, _QuoteDialog(existing: existing));
+
+Future<void> showFaqForm(BuildContext context, {FaqItem? existing}) =>
+    _show(context, _FaqDialog(existing: existing));
 
 Future<void> showNotificationForm(BuildContext context) =>
     _show(context, const _NotificationDialog());
@@ -314,6 +318,52 @@ class _QuoteDialogState extends ConsumerState<_QuoteDialog> {
         _field(_text, 'Quote', maxLines: 3),
         _field(_author, 'Author'),
         _field(_cat, 'Category'),
+        _StatusDropdown(
+          value: _status,
+          onChanged: (v) => setState(() => _status = v),
+        ),
+      ],
+    );
+  }
+}
+
+// ---- FAQ ----
+class _FaqDialog extends ConsumerStatefulWidget {
+  const _FaqDialog({this.existing});
+  final FaqItem? existing;
+  @override
+  ConsumerState<_FaqDialog> createState() => _FaqDialogState();
+}
+
+class _FaqDialogState extends ConsumerState<_FaqDialog> {
+  late final _question =
+      TextEditingController(text: widget.existing?.question ?? '');
+  late final _answer =
+      TextEditingController(text: widget.existing?.answer ?? '');
+  late final _order =
+      TextEditingController(text: '${widget.existing?.order ?? 0}');
+  late ContentStatus _status = widget.existing?.status ?? ContentStatus.active;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Frame(
+      title: widget.existing == null ? 'Add FAQ' : 'Edit FAQ',
+      onSave: () async {
+        final data = {
+          ContentKeys.question: _question.text.trim(),
+          ContentKeys.answer: _answer.text.trim(),
+          ContentKeys.order: int.tryParse(_order.text) ?? 0,
+          ContentKeys.status: _status.value,
+        };
+        final c = ref.read(adminWriteControllerProvider.notifier);
+        return widget.existing == null
+            ? (await c.create(ContentPaths.faqs, data)) != null
+            : c.save(ContentPaths.faqs, widget.existing!.id, data);
+      },
+      fields: [
+        _field(_question, 'Question'),
+        _field(_answer, 'Answer', maxLines: 5),
+        _field(_order, 'Sort Order'),
         _StatusDropdown(
           value: _status,
           onChanged: (v) => setState(() => _status = v),

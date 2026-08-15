@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/content_keys.dart';
 import '../../../../core/errors/exceptions.dart';
+import '../../../onboarding/domain/entities/onboarding_answers.dart';
 import '../../domain/entities/admin_models.dart';
 import '../../domain/repositories/admin_repository.dart';
 
@@ -84,6 +86,31 @@ class AdminRemoteDataSource {
       return points;
     } on FirebaseException catch (e) {
       throw ServerException(e.message ?? 'Failed to load activity.', code: e.code);
+    }
+  }
+
+  /// Users grouped by their onboarding recovery area. Read-only: one `.count()`
+  /// aggregate per fixed [OnboardingProblem] value, run in parallel. Labels come
+  /// from the enum, so no problem strings are hardcoded and the enum stays the
+  /// single source of truth.
+  Future<List<ProblemDistribution>> getProblemDistribution() async {
+    try {
+      const problems = OnboardingProblem.values;
+      final counts = await Future.wait([
+        for (final p in problems)
+          _count(_users.where('problem', isEqualTo: p.value)),
+      ]);
+      return [
+        for (var i = 0; i < problems.length; i++)
+          ProblemDistribution(
+            problemKey: problems[i].value,
+            label: problems[i].label,
+            count: counts[i],
+          ),
+      ];
+    } on FirebaseException catch (e) {
+      throw ServerException(
+          e.message ?? 'Failed to load problem distribution.', code: e.code);
     }
   }
 
@@ -247,6 +274,34 @@ class AdminRemoteDataSource {
         }).toList());
   }
 
+  Stream<List<FaqItem>> watchFaqs() {
+    return _c(ContentPaths.faqs).snapshots().map((s) {
+      final list = s.docs.map((d) {
+        final data = d.data();
+        return FaqItem(
+          id: d.id,
+          question: (data[ContentKeys.question] as String?) ?? '',
+          answer: (data[ContentKeys.answer] as String?) ?? '',
+          order: (data[ContentKeys.order] as num?)?.toInt() ?? 0,
+          status: ContentStatus.fromValue(data[ContentKeys.status] as String?),
+        );
+      }).toList();
+      list.sort((a, b) => a.order.compareTo(b.order));
+      return list;
+    });
+  }
+
+  /// A single admin-editable content document (e.g. `app_config/terms`).
+  Stream<ContentPage> watchContentPage(String docId) {
+    return _c(ContentPaths.appConfig).doc(docId).snapshots().map((doc) {
+      final data = doc.data() ?? const <String, dynamic>{};
+      return ContentPage(
+        title: (data[ContentKeys.title] as String?) ?? '',
+        body: (data[ContentKeys.body] as String?) ?? '',
+      );
+    });
+  }
+
   Stream<List<AdminNotificationItem>> watchNotifications() {
     return _c('notifications').snapshots().map((s) {
       final list = s.docs.map((d) {
@@ -292,7 +347,9 @@ class AdminRemoteDataSource {
         appVersion: (data['appVersion'] as String?) ?? '1.0.0',
         maintenanceMode: (data['maintenanceMode'] as bool?) ?? false,
         defaultLanguage: (data['defaultLanguage'] as String?) ?? 'en',
-        supportEmail: (data['supportEmail'] as String?) ?? '',
+        supportEmail: (data[ContentKeys.supportEmail] as String?) ?? '',
+        supportPhone: (data[ContentKeys.supportPhone] as String?) ?? '',
+        supportMessage: (data[ContentKeys.supportMessage] as String?) ?? '',
         privacyUrl: (data['privacyUrl'] as String?) ?? '',
         termsUrl: (data['termsUrl'] as String?) ?? '',
       );
